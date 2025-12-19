@@ -1,49 +1,13 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
-
-# Production
-dist/
-build/
-.next/
-out/
-
-# Environment Variables
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.dist/
+.venv/
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env.local
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-
-# Testing
-coverage/
-.nyc_output
-
-# IDE / Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-.project
-.settings/
-
-# OS Specific
+.env.*
 .DS_Store
-.DS_Store?
-._*
-Thumds.db
-ehthumbs.db
-Desktop.ini
-
-# Others
-.vercel
-.turbo
+*.log
+/build/
+/dist/
