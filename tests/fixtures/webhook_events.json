@@ -1,0 +1,49 @@
+{
+  "valid_send_event": {
+    "event": "send",
+    "user": "U1234567890abcdef",
+    "textContent": {
+      "text": "교환 가능한가요?",
+      "code": null,
+      "inputType": "typing"
+    },
+    "options": {
+      "mobile": true,
+      "under14": false,
+      "under19": false
+    },
+    "imageContent": null,
+    "compositeContent": null
+  },
+  "echo_event": {
+    "event": "echo",
+    "user": "U1234567890abcdef",
+    "textContent": {
+      "text": "답변 내용입니다",
+      "code": null,
+      "inputType": "typing"
+    },
+    "options": {
+      "mobile": true,
+      "under14": false,
+      "under19": false
+    },
+    "imageContent": null,
+    "compositeContent": null
+  },
+  "open_event": {
+    "event": "open",
+    "user": "U1234567890abcdef",
+    "textContent": null,
+    "options": {
+      "mobile": true,
+      "under14": false,
+      "under19": false
+    },
+    "imageContent": null,
+    "compositeContent": null
+  },
+  "invalid_event_missing_required": {
+    "user": "U1234567890abcdef"
+  }
+}

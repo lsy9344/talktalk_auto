@@ -1,0 +1,54 @@
+schema: 1
+story: "1.2"
+story_title: "네이버 톡톡 Webhook 수신(Ingest) 구축 (Naver TalkTalk Webhook Ingest Setup)"
+gate: "PASS"
+status_reason: "핵심 시나리오 테스트가 있고(20개), ruff/pytest/mypy가 통과합니다. QA에서 로그 PII 노출 위험도 제거했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-21T03:03:12Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "PERF-001"
+    severity: low
+    finding: "AC1의 500ms 목표를 테스트로 시간 측정하지는 않았습니다."
+    suggested_action: "배포 후 CloudWatch로 p50/p95 지연시간을 확인하고 필요하면 최적화합니다."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "배포 후 지연시간(p50/p95) 모니터링"
+
+quality_score: 100
+expires: "2026-01-04T03:03:12Z"
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 1
+  trace:
+    ac_covered: [2, 3, 4, 5, 6, 7]
+    ac_gaps: [1]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "로그에서 user_id 노출을 제거했고, ValidationError 입력값 로그도 막았습니다."
+  performance:
+    status: PASS
+    notes: "Ingest는 최소 작업(DDB 조회/put + SQS send)만 수행합니다. 500ms 목표는 배포 후 측정 권장."
+  reliability:
+    status: PASS
+    notes: "중복 감지(Conditional put)와 비-send 이벤트 무시가 구현되어 있습니다."
+  maintainability:
+    status: PASS
+    notes: "Repository 패턴 + 타입 힌트 + 테스트(20개) + ruff/mypy/pytest 통과."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Ingest 통합 테스트 1개 추가(선택)"
+      refs: ["tests/integration/"]
+    - action: "배포 후 응답 지연시간 모니터링 추가"
+      refs: ["infrastructure/template.yaml"]

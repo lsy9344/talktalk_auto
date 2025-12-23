@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: TalkTalk Auto - Naver TalkTalk AI Customer Support System
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        AWS_REGION: !Ref AWS::Region
+        CHANNEL_CONFIG_TABLE: !Ref ChannelConfigTable
+        DEDUPLICATION_TABLE: !Ref DeduplicationTable
+        GLOBAL_MODE_TABLE: !Ref GlobalModeTable
+        WORKER_QUEUE_URL: !Ref WorkerQueue
+        LOG_LEVEL: INFO
+        SERVICE_NAME: talktalk-auto
+        TELEGRAM_CHAT_ID: '{{resolve:ssm:/talktalk-auto/telegram-chat-id:1}}'
+
+Resources:
+  # ========================================
+  # DynamoDB Tables
+  # ========================================
+
+  ChannelConfigTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-ChannelConfig
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: channel_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: channel_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        Enabled: false
+
+  DeduplicationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-Deduplication
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: dedup_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: dedup_key
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  GlobalModeTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-GlobalMode
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: config_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: config_key
+          KeyType: HASH
+
+  # ========================================
+  # SQS Queue
+  # ========================================
+
+  WorkerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-WorkerQueue
+      VisibilityTimeout: 180
+      MessageRetentionPeriod: 1209600  # 14 days
+      ReceiveMessageWaitTimeSeconds: 20
+
+  # ========================================
+  # Lambda Layer (Shared Library)
+  # ========================================
+
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub ${AWS::StackName}-SharedLayer
+      Description: Shared libraries for TalkTalk Auto
+      ContentUri: ../src/layers/shared
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: python3.11
+
+  # ========================================
+  # Lambda Functions
+  # ========================================
+
+  IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-IngestFunction
+      CodeUri: ../src/functions/ingest
+      Handler: app.lambda_handler
+      Timeout: 10
+      MemorySize: 512
+      Layers:
+        - !Ref SharedLayer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ChannelConfigTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DeduplicationTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt WorkerQueue.QueueName
+      Events:
+        WebhookApi:
+          Type: Api
+          Properties:
+            Path: /naver/talktalk/{channel_id}/webhook
+            Method: POST
+            RestApiId: !Ref WebhookApi
+
+  # ========================================
+  # API Gateway
+  # ========================================
+
+  WebhookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${AWS::StackName}-WebhookApi
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST, OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  WebhookApiUrl:
+    Description: Webhook API Gateway URL
+    Value: !Sub https://${WebhookApi}.execute-api.${AWS::Region}.amazonaws.com/prod/naver/talktalk/{channel_id}/webhook
+
+  IngestFunctionArn:
+    Description: Ingest Lambda Function ARN
+    Value: !GetAtt IngestFunction.Arn
+
+  WorkerQueueUrl:
+    Description: Worker Queue URL
+    Value: !Ref WorkerQueue
+
+  ChannelConfigTableName:
+    Description: ChannelConfig Table Name
+    Value: !Ref ChannelConfigTable
+
+  DeduplicationTableName:
+    Description: Deduplication Table Name
+    Value: !Ref DeduplicationTable
+
+  GlobalModeTableName:
+    Description: GlobalMode Table Name
+    Value: !Ref GlobalModeTable

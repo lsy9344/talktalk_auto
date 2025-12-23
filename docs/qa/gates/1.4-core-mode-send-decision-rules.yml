@@ -1,0 +1,52 @@
+schema: 1
+story: "1.4"
+story_title: "TEST/PROD 모드 + 자동 발송 게이트(결정 로직) (Core Mode & Send Decision Rules)"
+gate: "PASS"
+status_reason: "3단계 게이트 규칙이 요구사항대로 구현되어 있고, 핵심 케이스가 유닛 테스트로 검증됩니다. ruff/pytest/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-21T19:00:52Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "MYPY-001"
+    severity: low
+    finding: "CI에서 mypy 검사 범위(예: src만 / tests까지 포함)가 명확히 고정되어 있지 않습니다."
+    suggested_action: "CI 스크립트/문서에 mypy 명령을 하나로 고정합니다. (권장: `python3 -m mypy src`)"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "mypy 검사 범위 표준화"
+
+quality_score: 100
+expires: "2026-01-04T19:00:52Z"
+
+evidence:
+  tests_reviewed: 33
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "TEST 기본값/안전 기본값(에러 시 TEST)로 실수 발송 위험을 낮췄고, PII 로그도 없습니다."
+  performance:
+    status: PASS
+    notes: "결정 로직은 단순 비교/분기라서 성능 부담이 거의 없습니다."
+  reliability:
+    status: PASS
+    notes: "게이트 실패 시 항상 no-send + LOG_AND_ALERT로 일관되게 동작합니다."
+  maintainability:
+    status: PASS
+    notes: "결정 로직이 함수로 분리되어 있고, 테스트(8개)로 회귀를 막습니다. mypy(src)도 통과합니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "mypy 검사 범위를 문서/CI에서 고정"
+      refs: ["pyproject.toml", "README.md"]

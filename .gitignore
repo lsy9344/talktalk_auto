@@ -11,3 +11,6 @@ __pycache__/
 *.log
 /build/
 /dist/
+# BMAD (local only)
+.bmad-core/
+.bmad-*/

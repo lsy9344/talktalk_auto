@@ -1,0 +1,52 @@
+schema: 1
+story: "2.3"
+story_title: "무응답 + Telegram 알림 트리거 (No-Reply + Telegram Alert Triggers)"
+gate: "PASS"
+status_reason: "알림 트리거 규칙/마스킹/Telegram 전송이 요구사항대로 구현되어 있고, 유닛 테스트로 검증됩니다. pytest/ruff/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-23T08:55:25Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "MASK-001"
+    severity: low
+    finding: "카드번호가 하이픈/공백이 섞인 형태(예: 1234-5678-...)로 들어오면 현재 마스킹 규칙에서 놓칠 수 있습니다."
+    suggested_action: "마스킹 범위를 넓힐지(하이픈/공백 포함) 정책을 정하고, 필요하면 정규식을 보완합니다."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "카드번호 마스킹 범위 결정(선택)"
+
+quality_score: 100
+expires: "2026-01-06T08:55:25Z"
+
+evidence:
+  tests_reviewed: 95
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Telegram 메시지에서 user_id/질문 원문이 마스킹되고, 전송 실패도 시스템을 멈추지 않습니다."
+  performance:
+    status: PASS
+    notes: "트리거 판별은 단순 분기라서 성능 부담이 거의 없습니다."
+  reliability:
+    status: PASS
+    notes: "TEST 모드 항상 알림 + PROD에서 조건 만족 시 알림으로 일관되게 동작합니다."
+  maintainability:
+    status: PASS
+    notes: "순수 함수 분리 + 테스트(34개)로 회귀를 막습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "카드번호(하이픈/공백 포함) 마스킹 범위 확장 여부 결정"
+      refs: ["src/layers/shared/python/talktalk_shared/utils/masking.py", "tests/unit/test_masking.py"]

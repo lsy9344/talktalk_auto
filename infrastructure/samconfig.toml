@@ -1,0 +1,11 @@
+version = 0.1
+
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "talktalk-auto-dev"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket"
+s3_prefix = "talktalk-auto"
+region = "ap-northeast-2"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true

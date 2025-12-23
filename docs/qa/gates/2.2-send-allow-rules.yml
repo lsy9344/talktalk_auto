@@ -1,0 +1,52 @@
+schema: 1
+story: "2.2"
+story_title: "자동 발송(send_to_user=true) 허용 조건 (Send Allow Rules)"
+gate: "PASS"
+status_reason: "추가 안전 조건(needs_operator, policy_flags)이 decision 로직에 반영되어 있고, 유닛 테스트로 검증됩니다. pytest/ruff/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-23T07:15:16Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "SAFE-001"
+    severity: low
+    finding: "`policy_flags`가 리스트가 아닌 값(None/문자열 등)으로 들어올 때, 어떻게 처리할지 정책이 아직 명확하지 않습니다."
+    suggested_action: "정책을 정한 뒤, 필요하면 타입 검증(또는 보수적으로 무조건 no-send) 로직을 추가합니다."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "policy_flags 타입 정책 결정(선택)"
+
+quality_score: 100
+expires: "2026-01-06T07:15:16Z"
+
+evidence:
+  tests_reviewed: 60
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "needs_operator/policy_flags가 있으면 무조건 막아, 실수 발송 위험을 낮춥니다."
+  performance:
+    status: PASS
+    notes: "조건 검사 몇 개 추가 수준이라 성능 영향이 거의 없습니다."
+  reliability:
+    status: PASS
+    notes: "조건 실패 시 항상 send_to_user=false + LOG_AND_ALERT로 일관됩니다."
+  maintainability:
+    status: PASS
+    notes: "결정 로직이 한 함수에 모여 있고, 테스트(12개)로 회귀를 막습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "policy_flags 타입 정책 확정(선택)"
+      refs: ["src/functions/worker/decision.py", "tests/unit/test_decision.py"]

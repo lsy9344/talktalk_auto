@@ -1,0 +1,47 @@
+schema: 1
+story: "1.3"
+story_title: "시스템 개요(Architecture) 정리 (System Overview Architecture)"
+gate: "PASS"
+status_reason: "문서가 AC 1~5(구성요소/흐름/DDB/S3+스케줄러/시크릿)를 모두 포함하고, index 링크도 정상입니다. pytest도 20개 모두 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-21T18:09:39Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_score: 100
+expires: "2026-01-04T18:09:39Z"
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Secrets Manager 항목이 '키 이름' 수준으로만 문서화되어 있고, 실제 비밀값 노출은 없습니다."
+  performance:
+    status: PASS
+    notes: "문서 스토리라 직접 성능 변경은 없습니다."
+  reliability:
+    status: PASS
+    notes: "웹훅→SQS 비동기 흐름과 재처리/중복 방지 개념이 문서에 포함됩니다."
+  maintainability:
+    status: PASS
+    notes: "Architecture 문서가 한 섹션(High Level Architecture)에 핵심 정보가 모여 있고, index로 탐색도 쉬워졌습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "docs/architecture/index.md에 AWS Components Summary / Secrets Manager Contents로 바로 가는 링크 추가(선택)"
+      refs: ["docs/architecture/index.md"]

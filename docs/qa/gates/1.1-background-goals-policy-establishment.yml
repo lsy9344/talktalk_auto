@@ -1,0 +1,47 @@
+schema: 1
+story: "1.1"
+story_title: "배경/목표/정책 확정 (Background/Goals/Policy Establishment)"
+gate: "PASS"
+status_reason: "문서 요구사항(목표/정책/제약/아키텍처/모드)이 명확하며, 기본 품질 검사(ruff/pytest/mypy)도 통과했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-21T02:49:26Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor: []
+
+quality_score: 100
+expires: "2026-01-04T02:49:26Z"
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "고객 무응답/금지응답/Telegram 알림 정책이 문서에 명확합니다."
+  performance:
+    status: PASS
+    notes: "문서 스토리라 직접 성능 이슈는 없습니다."
+  reliability:
+    status: PASS
+    notes: "웹훅 타임아웃(3s/5s)과 비동기 처리 원칙이 문서에 포함됩니다."
+  maintainability:
+    status: PASS
+    notes: "코딩/테스트 표준 문서가 있고, mypy/ruff/pytest 실행 상태도 맞췄습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Story Status 용어를 하나로 통일하기 (Review vs Ready for Review)"
+      refs: ["docs/stories/1.1.story.md"]

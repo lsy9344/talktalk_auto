@@ -1,0 +1,52 @@
+schema: 1
+story: "2.1"
+story_title: "파이프라인 상태 머신 (Pipeline State Machine)"
+gate: "PASS"
+status_reason: "상태 8개/전환 규칙이 Shared Layer에 구현되어 있고, Ingest SQS 메시지에 pipeline_state=\"QUEUED\"(문자열)이 포함됩니다. pytest/ruff/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-23T03:10:03Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "DOC-001"
+    severity: low
+    finding: "SQS 메시지의 `received_at` 값이 실제 시간(timestamp)이 아니라 request id입니다."
+    suggested_action: "필드명을 `request_id`로 바꾸거나, 별도로 timestamp를 추가하면 더 이해하기 쉽습니다. (선택)"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "SQS 메시지 필드 명확화(선택)"
+
+quality_score: 100
+expires: "2026-01-06T03:10:03Z"
+
+evidence:
+  tests_reviewed: 56
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "pipeline_state 로그/메시지에 user_id/질문 원문 등 PII가 포함되지 않습니다."
+  performance:
+    status: PASS
+    notes: "상태 값 추가/검증은 단순 비교라 비용/시간 영향이 거의 없습니다."
+  reliability:
+    status: PASS
+    notes: "잘못된 상태 전환을 ValueError로 막아, 흐름이 깨지는 것을 조기에 잡을 수 있습니다."
+  maintainability:
+    status: PASS
+    notes: "상태 값이 Shared Layer에 모여 있고, 전환 규칙/헬퍼 함수가 테스트로 보호됩니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "received_at 필드 명확화(선택)"
+      refs: ["src/functions/ingest/app.py"]
