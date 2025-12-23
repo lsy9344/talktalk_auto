@@ -1,0 +1,2 @@
+# Worker Lambda dependencies
+# Note: talktalk_shared is provided via Lambda Layer

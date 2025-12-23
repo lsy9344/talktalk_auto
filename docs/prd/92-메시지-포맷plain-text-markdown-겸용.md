@@ -6,6 +6,7 @@
 [톡톡 알림] 운영자 확인 필요 ⚠️
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 모드: global={{global_mode}} / channel={{channel_mode}}
 - 사유: {{reasons_joined}}
 - 위험도: {{risk_level}} / confidence={{confidence}}
@@ -30,6 +31,7 @@ row_id={{row_id}}
 [톡톡 알림] 시스템 오류 🚨
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 단계: {{stage}} (예: LLM_CALL / SHEETS_APPEND / SEND_API)
 - 오류요약: {{error_summary}}
 
@@ -47,6 +49,7 @@ row_id={{row_id}}
 [톡톡 알림] PROD 발송 보류 ⛔
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 사유: {{reasons_joined}}
 - confidence={{confidence}} / risk={{risk_level}}
 

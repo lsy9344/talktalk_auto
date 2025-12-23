@@ -11,6 +11,7 @@
   * 질문 요약/원문(마스킹)
   * 추천 답변 초안(draft_answer)
   * 왜 알림인지(reasons)
+  * (메시지 조합 사용 시) aggregation_id / message_count
 
 ## Story 6.2: 메시지 포맷(Plain Text / Markdown 겸용)
 
@@ -20,6 +21,7 @@
 [톡톡 알림] 운영자 확인 필요 ⚠️
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 모드: global={{global_mode}} / channel={{channel_mode}}
 - 사유: {{reasons_joined}}
 - 위험도: {{risk_level}} / confidence={{confidence}}
@@ -44,6 +46,7 @@ row_id={{row_id}}
 [톡톡 알림] 시스템 오류 🚨
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 단계: {{stage}} (예: LLM_CALL / SHEETS_APPEND / SEND_API)
 - 오류요약: {{error_summary}}
 
@@ -61,6 +64,7 @@ row_id={{row_id}}
 [톡톡 알림] PROD 발송 보류 ⛔
 - 채널: {{channel_name}} ({{channel_id}})
 - 상담자ID: {{user_id}}
+- 집계: {{aggregation_id}} / count={{message_count}}
 - 사유: {{reasons_joined}}
 - confidence={{confidence}} / risk={{risk_level}}
 
@@ -72,5 +76,6 @@ row_id={{row_id}}
 ## Story 6.3: 알림 중복 방지(권장)
 
 * 동일 `channel_id + user_id + 질문해시` 조합은 **5~10분 TTL**로 Telegram 중복 발송 방지
+  * `질문해시`는 **조합된 최종 질문**(500자 제한 적용 후)을 기준으로 계산 권장
 
 ---

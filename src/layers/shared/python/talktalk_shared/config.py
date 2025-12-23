@@ -63,3 +63,34 @@ def get_telegram_chat_id() -> str:
     if not chat_id:
         raise ValueError("TELEGRAM_CHAT_ID environment variable is required")
     return chat_id
+
+
+def get_aggregation_state_table() -> str:
+    """Get AggregationState DynamoDB table name"""
+    table = os.getenv("AGGREGATION_STATE_TABLE")
+    if not table:
+        raise ValueError("AGGREGATION_STATE_TABLE environment variable is required")
+    return table
+
+
+def get_aggregation_trigger_queue_url() -> str:
+    """Get AggregationTriggerQueue SQS URL"""
+    queue_url = os.getenv("AGGREGATION_TRIGGER_QUEUE_URL")
+    if not queue_url:
+        raise ValueError("AGGREGATION_TRIGGER_QUEUE_URL environment variable is required")
+    return queue_url
+
+
+def get_enable_message_aggregation() -> bool:
+    """Get message aggregation feature flag (default: False)"""
+    return os.getenv("ENABLE_MESSAGE_AGGREGATION", "false").lower() == "true"
+
+
+def get_aggregation_window_seconds() -> int:
+    """Get aggregation time window in seconds (default: 30)"""
+    return int(os.getenv("AGGREGATION_WINDOW_SECONDS", "30"))
+
+
+def get_max_messages_per_aggregation() -> int:
+    """Get maximum messages per aggregation session (default: 10)"""
+    return int(os.getenv("MAX_MESSAGES_PER_AGGREGATION", "10"))

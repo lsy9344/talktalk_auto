@@ -13,7 +13,12 @@ Globals:
         CHANNEL_CONFIG_TABLE: !Ref ChannelConfigTable
         DEDUPLICATION_TABLE: !Ref DeduplicationTable
         GLOBAL_MODE_TABLE: !Ref GlobalModeTable
+        AGGREGATION_STATE_TABLE: !Ref AggregationStateTable
         WORKER_QUEUE_URL: !Ref WorkerQueue
+        AGGREGATION_TRIGGER_QUEUE_URL: !Ref AggregationTriggerQueue
+        ENABLE_MESSAGE_AGGREGATION: 'false'
+        AGGREGATION_WINDOW_SECONDS: '30'
+        MAX_MESSAGES_PER_AGGREGATION: '10'
         LOG_LEVEL: INFO
         SERVICE_NAME: talktalk-auto
         TELEGRAM_CHAT_ID: '{{resolve:ssm:/talktalk-auto/telegram-chat-id:1}}'
@@ -64,6 +69,36 @@ Resources:
         - AttributeName: config_key
           KeyType: HASH
 
+  AggregationStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-AggregationState
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: aggregation_id
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: aggregation_id
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      GlobalSecondaryIndexes:
+        - IndexName: status-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: aggregation_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
   # ========================================
   # SQS Queue
   # ========================================
@@ -75,6 +110,15 @@ Resources:
       VisibilityTimeout: 180
       MessageRetentionPeriod: 1209600  # 14 days
       ReceiveMessageWaitTimeSeconds: 20
+
+  AggregationTriggerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-AggregationTriggerQueue
+      DelaySeconds: 30
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 300  # 5 minutes
+      ReceiveMessageWaitTimeSeconds: 0
 
   # ========================================
   # Lambda Layer (Shared Library)
@@ -119,6 +163,37 @@ Resources:
             Path: /naver/talktalk/{channel_id}/webhook
             Method: POST
             RestApiId: !Ref WebhookApi
+
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-WorkerFunction
+      CodeUri: ../src/functions/worker
+      Handler: app.lambda_handler
+      Timeout: 120
+      MemorySize: 1024
+      Layers:
+        - !Ref SharedLayer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ChannelConfigTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref GlobalModeTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AggregationStateTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt AggregationTriggerQueue.QueueName
+      Events:
+        WorkerQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt WorkerQueue.Arn
+            BatchSize: 1
+        AggregationTriggerQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AggregationTriggerQueue.Arn
+            BatchSize: 1
 
   # ========================================
   # API Gateway

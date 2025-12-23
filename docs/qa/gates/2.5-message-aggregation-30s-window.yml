@@ -1,0 +1,55 @@
+schema: 1
+story: "2.5"
+story_title: "Message Aggregation (30초 타임 윈도우)"
+gate: "PASS"
+status_reason: "집계 상태(DynamoDB) + 트리거 큐(SQS Delay) + Worker 분기/조합 로직이 구현되어 있고, AC7(만료 후 새 집계)와 PII 마스킹을 반영했습니다. pytest/ruff/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-23T19:34:42Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "TEST-001"
+    severity: low
+    finding: "Task 4.3(통합 테스트) / Task 4.4(E2E 수동 테스트)는 아직 미구현입니다."
+    suggested_action: "SQS Delay + DynamoDB를 포함한 통합 시나리오 테스트를 추가하고, TEST 환경에서 수동 E2E로 1회 이상 확인을 권장합니다."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "통합/E2E 테스트 보강"
+      - "운영 전 CloudWatch로 집계 트리거 지연/중복 처리 확인"
+
+quality_score: 100
+expires: "2026-01-06T19:34:42Z"
+
+evidence:
+  tests_reviewed: 152
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "user_id/user_key/질문 원문이 로그에 남지 않도록 마스킹을 적용했습니다."
+  performance:
+    status: PASS
+    notes: "Delay Queue + 최대 메시지 제한(기본 10) + 500자 제한으로 비용/지연 폭증을 방지합니다."
+  reliability:
+    status: PASS
+    notes: "중복/늦은 트리거는 status 체크로 무시하고, 만료 후 메시지는 새 집계를 시작합니다."
+  maintainability:
+    status: PASS
+    notes: "pipeline 진입점 분리 + 유닛 테스트 추가 + ruff/mypy 통과로 회귀를 줄입니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "통합 테스트(Delay Queue + DynamoDB 포함) 추가"
+      refs: ["docs/stories/2.5.story.md"]
+    - action: "TEST 환경에서 집계 기능 ON으로 E2E 1회 이상 확인"
+      refs: ["docs/stories/2.5.story.md"]

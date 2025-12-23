@@ -26,6 +26,7 @@
     - [Story 2.4: PROD 전송(보내기 API) 명세](./epic-2-message-processing-pipeline.md#story-24-prod-전송보내기-api-명세)
       - [2.4.1 요청 형태(공식 예시 기반)](./epic-2-message-processing-pipeline.md#241-요청-형태공식-예시-기반)
       - [2.4.2 비동기 처리 원칙](./epic-2-message-processing-pipeline.md#242-비동기-처리-원칙)
+    - [Story 2.5: Message Aggregation (30초 타임 윈도우)](./epic-2-message-processing-pipeline.md#story-25-message-aggregation-30초-타임-윈도우)
   - [Epic 3: RAG & Knowledge Base Management](./epic-3-rag-knowledge-base-management.md)
     - [Story 3.1: 문서 구조](./epic-3-rag-knowledge-base-management.md#story-31-문서-구조)
     - [Story 3.2: 수집/동기화(월 1회 업데이트 최적화)](./epic-3-rag-knowledge-base-management.md#story-32-수집동기화월-1회-업데이트-최적화)

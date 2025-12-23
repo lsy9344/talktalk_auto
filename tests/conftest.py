@@ -1,20 +1,30 @@
 """Pytest configuration and shared fixtures"""
 import json
 import os
+import sys
+from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+
+# Ensure shared Lambda Layer code is importable (talktalk_shared)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SHARED_LAYER_PYTHON_PATH = PROJECT_ROOT / "src" / "layers" / "shared" / "python"
+sys.path.insert(0, str(SHARED_LAYER_PYTHON_PATH))
 
 
 @pytest.fixture(autouse=True)
 def setup_env_vars() -> None:
     """Setup environment variables for tests"""
-    os.environ["AWS_REGION"] = "ap-northeast-2"
-    os.environ["CHANNEL_CONFIG_TABLE"] = "test-ChannelConfig"
-    os.environ["DEDUPLICATION_TABLE"] = "test-Deduplication"
-    os.environ["WORKER_QUEUE_URL"] = "https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-queue"
-    os.environ["LOG_LEVEL"] = "ERROR"
-    os.environ["SERVICE_NAME"] = "test-talktalk-auto"
+    os.environ.setdefault("AWS_REGION", "ap-northeast-2")
+    os.environ.setdefault("CHANNEL_CONFIG_TABLE", "test-ChannelConfig")
+    os.environ.setdefault("DEDUPLICATION_TABLE", "test-Deduplication")
+    os.environ.setdefault(
+        "WORKER_QUEUE_URL",
+        "https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-queue",
+    )
+    os.environ.setdefault("LOG_LEVEL", "ERROR")
+    os.environ.setdefault("SERVICE_NAME", "test-talktalk-auto")
 
 
 @pytest.fixture

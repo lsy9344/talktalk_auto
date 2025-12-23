@@ -10,6 +10,7 @@
 * `NOT_SENT` (정책상 무응답)
 * `ALERTED` (Telegram 전송 완료)
 * `FAILED` (재시도 후 실패/데드레터)
+* (추가 고려) 메시지 조합(Story 2.5)을 쓰는 경우, 집계 중 상태로 `AGGREGATING`를 둘 수 있습니다.
 
 ## Story 2.2: 자동 발송(send_to_user=true) 허용 조건
 
@@ -21,12 +22,15 @@
 4. `risk_level != HIGH`
 5. `policy_flags`에 금지 항목 없음
 
+* (메시지 조합 사용 시) 위 판단은 **조합된 최종 질문** 기준으로 합니다. (Story 2.5)
+
 ## Story 2.3: 무응답 + Telegram 알림 트리거(운영자 개입 필요)
 
+* (메시지 조합 사용 시) 아래 트리거는 **조합 완료 후**(30초 타이머 만료, 또는 이미지/파일 즉시 처리) 기준으로 판단합니다.
 * RAG 근거 부족(검색 결과 부실/유사도 낮음)
 * 주문/결제/개인정보/분쟁 등 리스크 HIGH로 분류
 * 이미지/복합 메시지인데 텍스트 부재
-* 질문이 지나치게 짧거나("?", "ㅇㅇ", "문의요") 정보 부족
+* 질문이 지나치게 짧거나("?", "ㅇㅇ", "문의요") 정보 부족 (조합 완료 후에도 짧으면)
 * LLM 출력 검증 실패(JSON 파싱 실패 등)
 * 외부 연동 실패(OpenAI/Sheets/Send API 오류)
 
@@ -51,6 +55,7 @@ curl -X POST \
 
 * Webhook은 200 OK로 즉시 응답 후, Worker에서 send API 호출
 * 동기식은 5초 내 응답 가능할 때만 권장(공식) ([GitHub][1])
+* (메시지 조합 사용 시) 고객 메시지를 **최대 30초까지 모을 수 있어**, 동기식 응답은 사실상 불가능 → 비동기 처리 필수
 
 ## Story 2.5: Message Aggregation (30초 타임 윈도우)
 
@@ -190,5 +195,6 @@ curl -X POST \
 
 * **Change Proposal**: `docs/change-proposals/2025-12-24-message-aggregation-proposal.md`
 * **Story**: `docs/stories/2.5.story.md`
+* **PRD 요약**: `docs/prd/54-message-aggregation-30초-타임-윈도우.md`
 
 ---

@@ -61,13 +61,17 @@
 
 * **API Gateway**: `POST /naver/talktalk/{channel_id}/webhook`
 * **Lambda(Ingest)**: 스키마 검증 → SQS enqueue → 즉시 200 OK
-* **SQS**: 이벤트 큐(유실 방지)
-* **Lambda(Worker)**: RAG → LLM → Sheets 기록 → (PROD 조건부) 보내기 API 호출 → Telegram 알림
+* **SQS**:
+
+  * 이벤트 큐(유실 방지)
+  * (추가) 30초 딜레이 큐(메시지 조합 완료 트리거)
+* **Lambda(Worker)**: (필요 시) 메시지 조합(최대 30초) → RAG → LLM → Sheets 기록 → (PROD 조건부) 보내기 API 호출 → Telegram 알림
 * **DynamoDB**
 
   * ChannelConfig (채널별 설정/문서매핑/채널 모드)
   * GlobalMode (전역 모드) 또는 SSM Parameter Store
   * Dedup(TTL)
+  * (추가) AggregationState (메시지 조합 상태/TTL)
 * **S3**
 
   * Google Docs 원문 스냅샷(선택)
@@ -101,5 +105,11 @@
 
 * 전역 모드=PROD & 채널 모드=PROD & LLM 판단 send_to_user=true 인 경우만 자동 발송
 * 그 외는 **무응답 + Telegram 알림**
+
+### 1.4.4 메시지 조합(30초)
+
+* 고객이 질문을 여러 메시지로 나눠 보내는 경우가 있어, 같은 `channel_id + user_id` 기준으로 **30초 동안 모아 1개 질문으로 만든 뒤** 처리합니다.
+  * 최대 10개까지 수집(과도한 요청 방지)
+  * 최종 질문 텍스트는 500자 이하(넘으면 뒤에서 500자만 사용)
 
 ---
