@@ -113,6 +113,26 @@ def get_secret_string(
         raise SecretsManagerError(f"Unexpected error: {str(e)}") from e
 
 
+def get_secret(secret_name: str, use_cache: bool = True) -> str:
+    """Retrieve secret by name from AWS Secrets Manager.
+
+    Convenience wrapper for get_secret_string that accepts secret name instead of ARN.
+
+    Args:
+        secret_name: Name of the secret to retrieve (e.g., "OPENAI_API_KEY")
+        use_cache: Whether to use in-memory cache (default: True)
+
+    Returns:
+        Secret string value
+
+    Raises:
+        SecretsManagerError: If secret retrieval fails
+
+    Reference: Story 3.2 - Simplified secret retrieval for Google/OpenAI clients
+    """
+    return get_secret_string(secret_name, use_cache=use_cache)
+
+
 def clear_secrets_cache() -> None:
     """Clear the in-memory secrets cache.
 

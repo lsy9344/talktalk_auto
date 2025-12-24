@@ -1,0 +1,66 @@
+schema: 1
+story: "3.3"
+story_title: "Chunking 권장 규칙 (제목/소제목 + 메타데이터)"
+gate: "PASS"
+status_reason: "제목/소제목 기반 섹션 추출 + 400~800 tokens 근처 청킹(근사) + 청크 메타데이터(JSON) 저장(S3)이 구현되어 있고, pytest/ruff/mypy(src) 검증이 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-24T17:24:44Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "OPS-001"
+    severity: low
+    finding: "tokens를 문자/4로 근사합니다. 한국어 문서에서는 실제 토큰 수와 차이가 날 수 있어, 운영에서 청크 크기 분포를 한 번 확인하는 게 안전합니다."
+    suggested_action: "운영에서 청크 길이/임베딩 비용을 모니터링하고, 필요하면 tiktoken 같은 실제 tokenizer 옵션을 검토하세요."
+  - id: "REL-001"
+    severity: low
+    finding: "Indexer는 임베딩에 `chunk.text`만 쓰고, 청크 JSON은 청크 리스트 전체를 저장합니다(현재 구현에서는 항상 일치)."
+    suggested_action: "안전장치로 '빈 텍스트 청크가 없도록' assert/필터를 추가하면 더 안전합니다(선택)."
+  - id: "TEST-001"
+    severity: low
+    finding: "`chunk_sections()`의 '400~800 tokens 근처'는 `chunk_text()` 테스트로 간접 확인합니다."
+    suggested_action: "`chunk_sections()`도 토큰 근사 범위 테스트를 추가하면 요구사항 추적이 더 명확해집니다(선택)."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 2 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "한국어 문서에서 청크 크기(근사 vs 실제 token) 분포 확인"
+      - "문서 길이/청크 수 증가 시 임베딩 비용 모니터링"
+      - "chunk metadata ↔ embedding/vector 순서가 항상 맞는지 운영에서 1회 확인"
+
+quality_score: 100
+expires: "2026-01-07T17:24:44Z"
+
+evidence:
+  tests_reviewed: 197
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "문서 본문/시크릿을 로그로 남기지 않고 길이/개수 중심으로 기록합니다. 외부 API 호출은 클라이언트 계층에서 처리합니다."
+  performance:
+    status: PASS
+    notes: "청크 크기를 400~800(근사)로 맞춰 검색 품질/비용 균형을 노립니다(운영에서 모니터링 권장)."
+  reliability:
+    status: PASS
+    notes: "헤딩이 없거나 섹션이 비어도 문서 전체 1개 섹션으로 안전하게 처리합니다. splitters가 없을 때도 fallback이 있습니다."
+  maintainability:
+    status: PASS
+    notes: "Chunk/Section 모델 분리 + 유닛/통합 테스트 + ruff/mypy로 회귀를 줄입니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "실제 token 기반(length_function) 옵션 추가 검토(선택)"
+      refs: ["src/functions/indexer/chunking.py"]
+    - action: "빈 텍스트 청크 방어(assert/필터) 추가(선택)"
+      refs: ["src/functions/indexer/app.py"]
+    - action: "`chunk_sections()` 토큰 범위 테스트 추가(선택)"
+      refs: ["tests/unit/test_chunking.py"]

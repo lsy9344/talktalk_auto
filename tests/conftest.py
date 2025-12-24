@@ -19,6 +19,7 @@ def setup_env_vars() -> None:
     os.environ.setdefault("AWS_REGION", "ap-northeast-2")
     os.environ.setdefault("CHANNEL_CONFIG_TABLE", "test-ChannelConfig")
     os.environ.setdefault("DEDUPLICATION_TABLE", "test-Deduplication")
+    os.environ.setdefault("GLOBAL_MODE_TABLE", "test-GlobalMode")
     os.environ.setdefault(
         "WORKER_QUEUE_URL",
         "https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-queue",

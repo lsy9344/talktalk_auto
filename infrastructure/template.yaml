@@ -14,6 +14,8 @@ Globals:
         DEDUPLICATION_TABLE: !Ref DeduplicationTable
         GLOBAL_MODE_TABLE: !Ref GlobalModeTable
         AGGREGATION_STATE_TABLE: !Ref AggregationStateTable
+        VECTOR_INDEX_METADATA_TABLE: !Ref VectorIndexMetadataTable
+        VECTOR_INDEX_BUCKET: !Ref VectorIndexBucket
         WORKER_QUEUE_URL: !Ref WorkerQueue
         AGGREGATION_TRIGGER_QUEUE_URL: !Ref AggregationTriggerQueue
         ENABLE_MESSAGE_AGGREGATION: 'false'
@@ -98,6 +100,43 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
+
+  VectorIndexMetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-VectorIndexMetadata
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: doc_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: doc_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        Enabled: false
+
+  # ========================================
+  # S3 Bucket
+  # ========================================
+
+  VectorIndexBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-vectorindex-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldIndices
+            Status: Disabled
+            ExpirationInDays: 90
 
   # ========================================
   # SQS Queue
@@ -194,6 +233,40 @@ Resources:
           Properties:
             Queue: !GetAtt AggregationTriggerQueue.Arn
             BatchSize: 1
+
+  IndexerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-IndexerFunction
+      CodeUri: ../src/functions/indexer
+      Handler: app.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
+      Layers:
+        - !Ref SharedLayer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ChannelConfigTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref GlobalModeTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VectorIndexMetadataTable
+        - S3CrudPolicy:
+            BucketName: !Ref VectorIndexBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:GOOGLE_SA_JSON-*
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:OPENAI_API_KEY-*
+      Events:
+        WeeklySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3 ? * MON *)
+            Description: Weekly KB document sync (every Monday at 3 AM UTC)
+            Enabled: true
 
   # ========================================
   # API Gateway

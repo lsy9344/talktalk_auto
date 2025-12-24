@@ -29,6 +29,7 @@ talktalk_auto/
 │   │       │       │   ├── __init__.py
 │   │       │       │   ├── channel_config.py
 │   │       │       │   ├── global_mode.py
+│   │       │       │   ├── common_doc_ids.py
 │   │       │       │   ├── deduplication.py
 │   │       │       │   └── vector_index_metadata.py
 │   │       │       ├── clients/

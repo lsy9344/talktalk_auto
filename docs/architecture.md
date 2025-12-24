@@ -690,19 +690,29 @@ PRD 요구사항과 아키텍처 패턴을 기반으로 핵심 데이터 엔티�
 
 **목적:** 전체 시스템의 TEST/PROD 모드를 제어하는 마스터 스위치입니다. 긴급 상황 시 모든 채널의 자동 발송을 즉시 중단할 수 있는 킬 스위치 역할도 합니다.
 
-**주요 속성:**
-- `config_key`: String (PK) - 고정값 "GLOBAL_MODE"
+추가로, 이 테이블은 **전역 설정 값을 `config_key`로 구분해서 저장**합니다. (예: 전역 모드, 공통 KB 문서 목록)
+
+**주요 아이템:**
+
+1) `config_key="GLOBAL_MODE"` (전역 모드 스위치)
+
 - `mode`: String - 전역 모드 ("TEST" | "PROD")
 - `updated_at`: String (ISO8601)
 - `updated_by`: String - 변경자 식별
 - `version`: Number - 낙관적 잠금용
 
+2) `config_key="COMMON_DOC_IDS"` (공통 KB 문서 목록)
+
+- `doc_ids`: List<String> - 공통 KB Google Docs 문서 ID 목록
+- 아이템이 없으면 안전하게 `[]`로 처리
+
 **관계:**
-- ChannelConfig.channel_mode와 AND 조건
+- 자동 발송 결정: `GLOBAL_MODE` + ChannelConfig.channel_mode와 AND 조건
+- RAG 문서 목록: ChannelConfig.doc_ids + (선택) COMMON_DOC_IDS.doc_ids
 
 **DynamoDB 스키마:**
 - Partition Key: `config_key`
-- 단일 레코드, On-Demand 요금제
+- 여러 설정 아이템 저장 가능 (config_key로 구분), On-Demand 요금제
 
 ### DeduplicationRecord (중복 방지)
 
@@ -890,6 +900,7 @@ PRD 요구사항과 아키텍처 패턴을 기반으로 핵심 데이터 엔티�
 **1. Repository 패턴 구현:**
 - `ChannelConfigRepository`: ChannelConfig CRUD
 - `GlobalModeRepository`: GlobalMode 조회/업데이트
+- `CommonDocIdsRepository`: GlobalMode에서 공통 KB 문서 목록 조회/저장 (`config_key="COMMON_DOC_IDS"`)
 - `DeduplicationRepository`: 중복 체크 및 생성
 - `VectorIndexMetadataRepository`: 메타데이터 관리
 
@@ -1518,6 +1529,7 @@ talktalk_auto/
 │   │       │       │   ├── __init__.py
 │   │       │       │   ├── channel_config.py
 │   │       │       │   ├── global_mode.py
+│   │       │       │   ├── common_doc_ids.py
 │   │       │       │   ├── deduplication.py
 │   │       │       │   └── vector_index_metadata.py
 │   │       │       ├── clients/

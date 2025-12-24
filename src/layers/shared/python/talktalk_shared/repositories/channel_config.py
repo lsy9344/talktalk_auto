@@ -1,5 +1,5 @@
 """ChannelConfig Repository - DynamoDB access layer"""
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import boto3
 from botocore.exceptions import ClientError
@@ -28,8 +28,13 @@ class ChannelConfigRepository:
 
         Returns:
             Channel config dict if found and active, None otherwise
+            Dict may contain:
+            - doc_ids: List[str] - Channel-specific Google Docs document IDs (Story 3.1 AC1)
+            - common_doc_enabled: bool - Whether to include common KB docs (Story 3.1 AC3)
+            - Other channel configuration fields
 
         Reference: docs/architecture.md#Data Models - ChannelConfig
+        Story 3.1 AC1, AC3: Document structure management
         """
         try:
             response = self.table.get_item(Key={"channel_id": channel_id})
@@ -56,6 +61,45 @@ class ChannelConfigRepository:
         except ClientError as e:
             logger.error(
                 f"Failed to get channel config: {channel_id}",
+                extra={"error": str(e)},
+            )
+            raise
+
+    def get_all_active_channels(self) -> List[Dict[str, Any]]:
+        """
+        Get all active channel configurations
+
+        Returns:
+            List of channel config dicts that are active (enabled=true and channel_mode != DISABLED)
+
+        Reference: Story 3.2 AC2 - Get all active channels for document indexing
+        """
+        try:
+            items: List[Dict[str, Any]] = []
+            scan_kwargs: Dict[str, Any] = {}
+
+            while True:
+                response = self.table.scan(**scan_kwargs)
+                items.extend(cast(List[Dict[str, Any]], response.get("Items", [])))
+
+                last_evaluated_key = response.get("LastEvaluatedKey")
+                if not last_evaluated_key:
+                    break
+                scan_kwargs["ExclusiveStartKey"] = last_evaluated_key
+
+            # Filter for active channels
+            active_channels = [
+                item
+                for item in items
+                if item.get("enabled", False) and item.get("channel_mode", "TEST") != "DISABLED"
+            ]
+
+            logger.info(f"Found {len(active_channels)} active channels out of {len(items)} total")
+            return active_channels
+
+        except ClientError as e:
+            logger.error(
+                "Failed to scan channel configs",
                 extra={"error": str(e)},
             )
             raise

@@ -4,6 +4,11 @@ from talktalk_shared.models.aggregation_state import (
     AggregationState,
     AggregationStatus,
 )
+from talktalk_shared.models.kb_chunk import (
+    DocumentSection,
+    KBChunk,
+    generate_chunk_id,
+)
 from talktalk_shared.models.pipeline_state import (
     PipelineState,
     get_allowed_transitions,
@@ -21,4 +26,7 @@ __all__ = [
     "AggregationState",
     "AggregationStatus",
     "AggregatedMessage",
+    "KBChunk",
+    "DocumentSection",
+    "generate_chunk_id",
 ]

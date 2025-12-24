@@ -5,3 +5,9 @@ pytest-asyncio==0.21.1
 ruff==0.1.9
 mypy==1.8.0
 moto[dynamodb,sqs,s3]==4.2.0
+google-api-python-client==2.111.0
+google-auth==2.25.2
+openai==1.10.0
+faiss-cpu==1.7.4
+langchain-text-splitters==0.0.1
+numpy==1.24.3

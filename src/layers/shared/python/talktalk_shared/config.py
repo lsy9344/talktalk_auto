@@ -94,3 +94,19 @@ def get_aggregation_window_seconds() -> int:
 def get_max_messages_per_aggregation() -> int:
     """Get maximum messages per aggregation session (default: 10)"""
     return int(os.getenv("MAX_MESSAGES_PER_AGGREGATION", "10"))
+
+
+def get_vector_index_metadata_table() -> str:
+    """Get VectorIndexMetadata DynamoDB table name"""
+    table = os.getenv("VECTOR_INDEX_METADATA_TABLE")
+    if not table:
+        raise ValueError("VECTOR_INDEX_METADATA_TABLE environment variable is required")
+    return table
+
+
+def get_vector_index_bucket() -> str:
+    """Get S3 bucket name for vector indices"""
+    bucket = os.getenv("VECTOR_INDEX_BUCKET")
+    if not bucket:
+        raise ValueError("VECTOR_INDEX_BUCKET environment variable is required")
+    return bucket

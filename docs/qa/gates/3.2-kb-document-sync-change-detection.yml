@@ -1,0 +1,55 @@
+schema: 1
+story: "3.2"
+story_title: "수집/동기화 (변경 감지로 비용 줄이기)"
+gate: "PASS"
+status_reason: "변경 감지(revision_id)로 스킵/재색인 흐름이 구현되어 있고, pytest/ruff/mypy(src) 검증이 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-24T14:05:56Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "OPS-001"
+    severity: low
+    finding: "로컬 환경(macOS 등)에서는 faiss/numpy 설치가 어려울 수 있어, 통합 테스트는 mock 기반으로 구성됩니다."
+    suggested_action: "배포(Lambda Linux) 환경에서 requirements 포함 여부를 CI로 확인하고, 필요하면 Linux에서 한 번 더 통합 테스트를 돌리세요."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 2 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "문서 수가 많아질 때 실행 시간/비용 모니터링"
+      - "배포 패키지에 faiss/numpy 포함 여부 확인"
+
+quality_score: 100
+expires: "2026-01-07T14:05:56Z"
+
+evidence:
+  tests_reviewed: 193
+  risks_identified: 4
+  trace:
+    ac_covered: [2, 3, 4, 5, 6]
+    ac_gaps: [1]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "시크릿은 Secrets Manager에서 읽고, 로그에 시크릿/문서 본문이 남지 않게 처리합니다."
+  performance:
+    status: PASS
+    notes: "revision_id로 미변경 문서를 스킵해 비용을 줄입니다(문서 수 증가 시 모니터링 권장)."
+  reliability:
+    status: PASS
+    notes: "문서 단위 try/except로 계속 진행하고, Circuit Breaker와 Scan 페이지네이션으로 누락/연쇄 실패를 줄입니다."
+  maintainability:
+    status: PASS
+    notes: "Repository/Client/Chunker 분리 + pytest/ruff/mypy(src) 통과로 회귀를 줄입니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "AC1(스케줄/수동 트리거)은 배포 후 1회 수동 확인 체크리스트 추가(선택)"
+      refs: ["infrastructure/template.yaml", "scripts/manual_index_trigger.py"]
+    - action: "VectorIndexMetadata에 doc_type 저장(선택)"
+      refs: ["src/functions/indexer/app.py"]
