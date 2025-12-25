@@ -220,8 +220,18 @@ Resources:
             TableName: !Ref GlobalModeTable
         - DynamoDBCrudPolicy:
             TableName: !Ref AggregationStateTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref VectorIndexMetadataTable
+        - S3ReadPolicy:
+            BucketName: !Ref VectorIndexBucket
         - SQSSendMessagePolicy:
             QueueName: !GetAtt AggregationTriggerQueue.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:OPENAI_API_KEY-*
       Events:
         WorkerQueueEvent:
           Type: SQS

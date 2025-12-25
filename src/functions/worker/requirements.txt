@@ -1,2 +1,6 @@
 # Worker Lambda dependencies
 # Note: talktalk_shared is provided via Lambda Layer
+
+# Vector search dependencies
+faiss-cpu>=1.7.4
+numpy>=1.24.0

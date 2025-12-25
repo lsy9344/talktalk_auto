@@ -293,7 +293,7 @@ def _build_faiss_index(embeddings: List[List[float]]) -> Tuple[Any, int]:
         - We import heavy deps (numpy/faiss) lazily to keep local tests light.
         - In AWS Lambda, these packages must be included in deployment package.
     """
-    import faiss  # type: ignore[import-not-found]
+    import faiss  # type: ignore[import-not-found,import-untyped]
     import numpy as np  # type: ignore[import-not-found]
 
     embedding_array = np.array(embeddings, dtype=np.float32)
@@ -306,7 +306,7 @@ def _build_faiss_index(embeddings: List[List[float]]) -> Tuple[Any, int]:
 
 def _write_faiss_index_to_file(index: Any, file_path: str) -> None:
     """Write FAISS index to a local file."""
-    import faiss  # type: ignore[import-not-found]
+    import faiss  # type: ignore[import-not-found,import-untyped]
 
     faiss.write_index(index, file_path)
 
