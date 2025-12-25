@@ -4,7 +4,7 @@ Reference: docs/prd/53-무응답-telegram-알림-트리거운영자-개입-필�
 Reference: docs/architecture.md#telegram-alert-triggers
 Reference: docs/stories/2.3.story.md
 """
-from typing import Any, Dict, List, Literal, Optional, TypedDict
+from typing import Any, Dict, List, Literal, Mapping, Optional, TypedDict
 
 
 class AlertDecision(TypedDict):
@@ -20,7 +20,7 @@ def evaluate_alert_triggers(
     webhook_event: Dict[str, Any],
     retrieved_chunks: List[Any],
     llm_response: Optional[Dict[str, Any]],
-    send_decision: Optional[Dict[str, Any]],
+    send_decision: Optional[Mapping[str, Any]],
     error_code: Optional[str] = None,
 ) -> AlertDecision:
     """

@@ -151,10 +151,12 @@ class TestWorkerAggregation:
                     )
 
         mock_process.assert_called_once()
-        (called_channel_id, called_event), _ = mock_process.call_args
+        (called_channel_id, called_event), called_kwargs = mock_process.call_args
         assert called_channel_id == "wc123"
         assert called_event["user"] == "user123"
         assert called_event["textContent"]["text"] == "Hello\nWorld"
+        assert called_kwargs["aggregation_id"] == "agg-1"
+        assert called_kwargs["message_count"] == 2
 
         mock_repo.complete.assert_called_once_with("wc123#user123", "agg-1")
 

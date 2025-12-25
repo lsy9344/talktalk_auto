@@ -40,6 +40,11 @@ async def test_send_text_message_success_200(mock_circuit_breaker: CircuitBreake
         assert kwargs["json"]["textContent"]["text"] == "Hello, customer!"
         assert kwargs["timeout"] == 10
 
+        # AC3: Verify ONLY textContent is present (no imageContent or compositeContent)
+        assert "textContent" in kwargs["json"]
+        assert "imageContent" not in kwargs["json"]
+        assert "compositeContent" not in kwargs["json"]
+
         # Return 200 OK
         return Response(
             status_code=200,
@@ -250,3 +255,65 @@ async def test_circuit_breaker_blocks_when_open() -> None:
     # Assert: Circuit should be open, next call should raise
     with pytest.raises(CircuitBreakerOpenError):
         await client.send_text_message("token", "user", "text3")
+
+
+@pytest.mark.asyncio
+async def test_send_text_message_only_textcontent_no_image_or_composite(
+    mock_circuit_breaker: CircuitBreaker,
+) -> None:
+    """Test that send_text_message only includes textContent, not imageContent or compositeContent.
+
+    This test enforces the rule from docs/prd/13-구현자에게-중요한-메모실수-방지.md:
+    "send 이벤트로 보낼 때는 text/image/composite 중 1개만 선택"
+
+    Reference: docs/stories/7.4.story.md AC3
+    Reference: docs/architecture/implementation-notes.md (Section 2)
+    """
+    # Arrange
+    async def mock_post(url: str, **kwargs) -> Response:
+        payload = kwargs["json"]
+
+        # AC3: Verify message type exclusivity
+        # MUST have textContent
+        assert "textContent" in payload, "textContent must be present"
+        assert "text" in payload["textContent"], "text field must be present"
+
+        # MUST NOT have imageContent or compositeContent
+        assert (
+            "imageContent" not in payload
+        ), "imageContent must not be present when sending text"
+        assert (
+            "compositeContent" not in payload
+        ), "compositeContent must not be present when sending text"
+
+        # Count content types - must be exactly 1
+        content_types = [
+            k for k in payload.keys() if k.endswith("Content")
+        ]
+        assert (
+            len(content_types) == 1
+        ), f"Must have exactly 1 content type, found {len(content_types)}: {content_types}"
+
+        return Response(
+            status_code=200,
+            json={"result": "success"},
+            request=Request("POST", url),
+        )
+
+    mock_client = AsyncClient()
+    mock_client.post = mock_post
+
+    client = TalkTalkClient(
+        circuit_breaker=mock_circuit_breaker,
+        client=mock_client,
+    )
+
+    # Act
+    result = await client.send_text_message(
+        channel_auth_token="test_token",
+        user_id="user123",
+        text="Test message",
+    )
+
+    # Assert
+    assert result is True

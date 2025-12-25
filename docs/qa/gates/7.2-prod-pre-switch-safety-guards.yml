@@ -1,0 +1,55 @@
+schema: 1
+story: "7.2"
+story_title: 'PROD 전환 전 "안전장치"'
+gate: "PASS"
+status_reason: "PROD에서 `confidence_threshold`가 누락되면 0.85로 더 보수적으로 처리하고, `risk_level == HIGH`는 항상 자동 발송을 차단하며, Ingest는 `echo` 같은 non-send 이벤트를 200 OK로 종료(큐 enqueue 없음)하도록 테스트로 고정했습니다. `python3 -m pytest -q` 384개 테스트가 통과했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T12:09:12Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "ROBUST-001"
+    severity: low
+    finding: "`confidence_threshold` 값이 '누락'이 아니라 `None`/문자열 같은 잘못된 형태로 들어오면, 비교에서 런타임 에러가 날 수 있습니다."
+    suggested_action: "운영에서 ChannelConfig 값을 넣을 때 타입을 숫자로 보장하세요. (선택) 코드에서 `None`/문자열도 안전하게 처리하는 방어 로직을 추가해도 좋습니다."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 3 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "PROD 전환 채널의 `confidence_threshold`가 실제로 0.85로 설정되어 있는지 1회 점검"
+      - "파트너센터에서 echo 이벤트가 비활성 상태인지 점검"
+
+quality_score: 100
+expires: "2026-01-08T12:09:13Z"
+
+evidence:
+  tests_reviewed: 384
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "누락 threshold는 0.85로 더 보수적으로 처리하고, HIGH 리스크는 항상 차단합니다."
+  performance:
+    status: PASS
+    notes: "Ingest는 non-send 이벤트를 바로 200 OK로 끝내고 enqueue 하지 않습니다."
+  reliability:
+    status: PASS
+    notes: "HIGH 리스크 차단과 알림 트리거, echo 무시가 유닛 테스트로 고정되어 있습니다."
+  maintainability:
+    status: PASS
+    notes: "핵심 안전장치 3가지가 각각 테스트로 분리되어 있어 변경 시 영향 파악이 쉽습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "ChannelConfig 입력값 검증(숫자 타입) 또는 방어 코드 추가"
+      refs: ["src/functions/worker/decision.py"]
+

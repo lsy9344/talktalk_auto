@@ -94,8 +94,9 @@ def make_send_decision(
         }
 
     # 3e: Check confidence threshold
+    # Story 7.2 AC1: Default to 0.85 for missing threshold (PROD safety)
     confidence = llm_response.get("confidence", 0.0)
-    threshold = channel_config.get("confidence_threshold", 0.80)
+    threshold = channel_config.get("confidence_threshold", 0.85)
     if confidence < threshold:
         return {
             "send_to_user": False,

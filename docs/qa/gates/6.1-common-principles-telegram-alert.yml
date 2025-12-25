@@ -1,0 +1,57 @@
+schema: 1
+story: "6.1"
+story_title: "공통 원칙 (Telegram 알림)"
+gate: "PASS"
+status_reason: "Telegram 알림 메시지에 공통 필드가 항상 들어가고(채널/사용자/질문/초안/사유/집계), PII 마스킹이 테스트로 확인됩니다. 조합 메시지에서도 aggregation_id/message_count가 파이프라인을 통해 전달되게 보완했고 pytest(322) 통과했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T08:36:40Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "REL-001"
+    severity: low
+    finding: "Telegram `parse_mode=Markdown`라서, 질문/초안에 특수문자(`_`, `*` 등)가 많으면 메시지 모양이 깨질 수 있습니다."
+    suggested_action: "선택: 텍스트를 Markdown escape 하거나, parse_mode를 `HTML`로 바꾸고 HTML escape 규칙을 정하세요."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "Telegram/로그에 원문(question_raw) 출력 금지(마스킹 유지)"
+      - "조합 메시지에서 aggregation_id/message_count가 실제로 찍히는지 운영에서 1회 확인"
+
+quality_score: 100
+expires: "2026-01-08T08:36:40Z"
+
+evidence:
+  tests_reviewed: 322
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Telegram 메시지는 `mask_user_id()`/`mask_question()`로 최종 마스킹을 한 번 더 적용합니다."
+  performance:
+    status: PASS
+    notes: "문자열 조합/마스킹 + Telegram 전송 1회 수준이라 비용이 작습니다."
+  reliability:
+    status: PASS
+    notes: "조합 메시지에서도 aggregation_id/message_count가 전달되도록 보완했고, pytest가 통과합니다."
+  maintainability:
+    status: PASS
+    notes: "기본값을 둬서 기존 호출은 그대로 동작하고, 유닛 테스트로 회귀를 줄입니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Telegram 메시지 Markdown escape/규칙(또는 HTML 전환) 정하기"
+      refs:
+        ["src/layers/shared/python/talktalk_shared/clients/telegram_client.py", "src/functions/worker/telegram_message.py"]
+    - action: "TEST 환경에서 조합 메시지 1회 흘려보내 Telegram/시트에 aggregation 값이 찍히는지 확인"
+      refs: ["src/functions/worker/aggregator.py", "src/functions/worker/pipeline.py"]

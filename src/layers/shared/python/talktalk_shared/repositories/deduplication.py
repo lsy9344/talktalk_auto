@@ -93,3 +93,76 @@ class DeduplicationRepository:
                     extra={"error": str(e)},
                 )
                 raise
+
+    def try_create_telegram_alert(
+        self,
+        channel_id: str,
+        user_id: str,
+        question_hash: str,
+        ttl_minutes: int = 10,
+    ) -> bool:
+        """
+        Try to create Telegram alert deduplication record.
+
+        This is different from webhook dedup - it prevents alert spam
+        based on question content hash.
+
+        Args:
+            channel_id: Channel ID
+            user_id: User ID
+            question_hash: Question text hash (from create_question_hash)
+            ttl_minutes: TTL in minutes (default: 10)
+
+        Returns:
+            True if created (alert should be sent), False if duplicate (skip alert)
+
+        Reference:
+            - docs/stories/6.3.story.md#task-2-telegram-dedup-repository
+            - docs/prd/93-알림-중복-방지권장.md
+        """
+        # AC1: Use TG# prefix to avoid collision with webhook dedup
+        dedup_key = f"TG#{channel_id}#{user_id}#{question_hash}"
+
+        # AC3: Calculate TTL (Unix timestamp)
+        ttl_timestamp = int((datetime.utcnow() + timedelta(minutes=ttl_minutes)).timestamp())
+
+        try:
+            # AC1: Conditional put - fails if dedup_key already exists
+            self.table.put_item(
+                Item={
+                    "dedup_key": dedup_key,
+                    "channel_id": channel_id,
+                    "question_hash": question_hash,
+                    "alert_type": "telegram",
+                    "created_at": datetime.utcnow().isoformat(),
+                    "ttl": ttl_timestamp,
+                },
+                ConditionExpression="attribute_not_exists(dedup_key)",
+            )
+
+            # AC4: Log only hash, not raw question
+            logger.info(
+                "Telegram alert dedup record created",
+                extra={"channel_id": channel_id, "question_hash": question_hash},
+            )
+            return True
+
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # AC1: Duplicate detected - skip Telegram alert
+                logger.info(
+                    "Duplicate Telegram alert detected - skipping",
+                    extra={"channel_id": channel_id, "question_hash": question_hash},
+                )
+                return False
+            else:
+                # Other DynamoDB error
+                logger.error(
+                    "Failed to create Telegram dedup record",
+                    extra={
+                        "channel_id": channel_id,
+                        "question_hash": question_hash,
+                        "error": str(e),
+                    },
+                )
+                raise

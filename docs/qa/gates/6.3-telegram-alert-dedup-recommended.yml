@@ -1,0 +1,60 @@
+schema: 1
+story: "6.3"
+story_title: "알림 중복 방지(권장)"
+gate: "PASS"
+status_reason: "동일 `channel_id + user_id + question_hash` 조합은 DynamoDB Conditional Put + TTL(10분)로 중복 Telegram 알림이 스킵됩니다. 질문 해시는 500자 제한(뒤에서) + SHA256(앞 16자) 규칙을 지키고, `python3 -m pytest -q` 356개 테스트가 통과했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T10:11:07Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "OPS-001"
+    severity: low
+    finding: "DynamoDB 테이블에서 TTL 속성(`ttl`)이 꺼져 있으면, 중복 방지 레코드가 자동 삭제되지 않아 알림이 오래 막힐 수 있습니다."
+    suggested_action: "운영 배포 전에 DeduplicationRecord 테이블 TTL 설정이 `ttl`로 켜져 있는지 1번 확인하세요."
+    suggested_owner: "dev"
+  - id: "REL-001"
+    severity: low
+    finding: "`try_create_telegram_alert()`에서 DynamoDB의 “중복” 이외 오류는 예외로 올립니다."
+    suggested_action: "선택: 권장 기능이므로, DynamoDB 오류면 dedup을 건너뛰고(=알림은 보내기) 계속 진행하는 방식도 고려하세요."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 3 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "중복 방지 로그/알림에 원문(user_id/질문) 출력 금지(해시만 유지)"
+      - "운영 배포 시 DeduplicationRecord TTL(`ttl`) 활성화 확인"
+
+quality_score: 100
+expires: "2026-01-08T10:11:07Z"
+
+evidence:
+  tests_reviewed: 356
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "중복 방지 로깅은 `question_hash`만 남기고, 파이프라인 로그도 마스킹된 값만 사용합니다."
+  performance:
+    status: PASS
+    notes: "SHA256 1회 + DynamoDB put 1회(조건부) 수준이라 부담이 작습니다."
+  reliability:
+    status: PASS
+    notes: "Conditional Put으로 중복을 막고 TTL로 자동 만료됩니다. 테스트가 통과합니다."
+  maintainability:
+    status: PASS
+    notes: "`create_question_hash()`/Repository 메서드로 분리되어 있고 유닛 테스트가 있습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Telegram 알림 dedup의 실패 전략(오류 시 fail-open 여부) 합의하기"
+      refs: ["src/functions/worker/pipeline.py", "src/layers/shared/python/talktalk_shared/repositories/deduplication.py"]
+

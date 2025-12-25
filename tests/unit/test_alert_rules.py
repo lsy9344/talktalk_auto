@@ -312,3 +312,26 @@ class TestEvaluateAlertTriggers:
         assert "SEND_BLOCKED_HIGH_RISK" in result["reasons"]
         assert "EXTERNAL_API_FAILURE_E004" in result["reasons"]
         assert len(result["reasons"]) == 5
+
+    def test_high_risk_always_alerts_in_prod_mode(self):
+        """Story 7.2 AC2 - HIGH risk always triggers alert even in PROD mode"""
+        # Arrange
+        webhook_event = {"textContent": {"text": "Valid question here"}}
+        retrieved_chunks = [{"chunk": "data"}]
+        llm_response = {"risk_level": "HIGH", "confidence": 0.95}  # High confidence but HIGH risk
+        send_decision = {"action": "LOG_AND_ALERT", "reason": "HIGH_RISK"}
+
+        # Act
+        result = evaluate_alert_triggers(
+            global_mode="PROD",
+            channel_mode="PROD",
+            webhook_event=webhook_event,
+            retrieved_chunks=retrieved_chunks,
+            llm_response=llm_response,
+            send_decision=send_decision,
+        )
+
+        # Assert - Must alert because of HIGH risk
+        assert result["should_alert"] is True
+        assert "RISK_LEVEL_HIGH" in result["reasons"]
+        assert "SEND_BLOCKED_HIGH_RISK" in result["reasons"]

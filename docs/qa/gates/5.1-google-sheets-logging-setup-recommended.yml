@@ -1,0 +1,55 @@
+schema: 1
+story: "5.1"
+story_title: "시트 구성(권장)"
+gate: "PASS"
+status_reason: "Spreadsheet ID 설정 + GoogleSheetsClient(재시도/서킷 브레이커) + smoke test 스크립트 + 유닛 테스트가 준비되어 있고, pytest/ruff/mypy(src)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T04:51:59Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "REL-001"
+    severity: low
+    finding: "`TIMEOUT_SECONDS=30` 상수는 있으나, 실제 HTTP 타임아웃이 강제되지는 않습니다."
+    suggested_action: "선택: google-api-python-client HTTP 객체에 timeout을 주입하거나, 문서로 현재 타임아웃 정책을 명확히 하세요."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "배포 시 smoke test로 append 1회 확인"
+      - "E005(Sheets 기록 실패) 발생률/알림 모니터링"
+
+quality_score: 100
+expires: "2026-01-08T04:51:59Z"
+
+evidence:
+  tests_reviewed: 262
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "서비스 계정 키는 Secrets Manager에서만 읽고, 테스트는 모킹합니다."
+  performance:
+    status: PASS
+    notes: "append 1회 호출 + 재시도 2회 제한, 서비스 객체 캐시로 불필요한 초기화를 줄입니다."
+  reliability:
+    status: PASS
+    notes: "재시도(2회) + 서킷 브레이커 + 명확한 설정 에러 + smoke test 스크립트로 운영 확인이 가능합니다."
+  maintainability:
+    status: PASS
+    notes: "Shared Layer에 클라이언트/설정 getter로 분리했고, pytest/ruff/mypy로 보호됩니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "HTTP 타임아웃(30초) 실제 적용 여부 확인"
+      refs: ["src/layers/shared/python/talktalk_shared/clients/google_sheets_client.py", "docs/architecture.md"]
+    - action: "TEST 환경에서 smoke test 실행을 배포 체크리스트에 포함"
+      refs: ["scripts/smoke_test_google_sheets_append.py", "docs/stories/5.1.story.md"]

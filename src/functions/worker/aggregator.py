@@ -351,7 +351,12 @@ def finalize_aggregation(trigger_message: Dict[str, Any]) -> None:
     else:
         aggregated_event["textContent"] = {"text": combined_text}
 
-    process_single_message(channel_id, aggregated_event)
+    process_single_message(
+        channel_id,
+        aggregated_event,
+        aggregation_id=aggregation_id,
+        message_count=getattr(state, "message_count", 1),
+    )
 
     # Mark as completed
     repo.complete(user_key, aggregation_id)

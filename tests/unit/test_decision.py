@@ -279,3 +279,69 @@ class TestMakeSendDecision:
         assert result["send_to_user"] is True
         assert result["reason"] == "ALL_GATES_PASSED"
         assert result["action"] == "SEND_LOG_NO_ALERT"
+
+    def test_missing_threshold_defaults_to_085(self):
+        """Test: Story 7.2 AC1 - Missing threshold defaults to 0.85 for safety"""
+        # Arrange
+        channel_config = {
+            "channel_mode": "PROD",
+            # No confidence_threshold key - should default to 0.85
+        }
+        global_mode = "PROD"
+        llm_response = {
+            "send_to_user": True,
+            "confidence": 0.83,  # Below 0.85 default
+            "risk_level": "LOW",
+        }
+
+        # Act
+        result = make_send_decision(channel_config, global_mode, llm_response)
+
+        # Assert - Should block because 0.83 < 0.85
+        assert result["send_to_user"] is False
+        assert result["reason"] == "LOW_CONFIDENCE_0.83"
+        assert result["action"] == "LOG_AND_ALERT"
+
+    def test_missing_threshold_allows_send_above_085(self):
+        """Test: Story 7.2 AC1 - Missing threshold allows send if confidence >= 0.85"""
+        # Arrange
+        channel_config = {
+            "channel_mode": "PROD",
+            # No confidence_threshold key - should default to 0.85
+        }
+        global_mode = "PROD"
+        llm_response = {
+            "send_to_user": True,
+            "confidence": 0.86,  # Above 0.85 default
+            "risk_level": "LOW",
+        }
+
+        # Act
+        result = make_send_decision(channel_config, global_mode, llm_response)
+
+        # Assert - Should allow because 0.86 >= 0.85
+        assert result["send_to_user"] is True
+        assert result["reason"] == "ALL_GATES_PASSED"
+        assert result["action"] == "SEND_LOG_NO_ALERT"
+
+    def test_explicit_threshold_overrides_default(self):
+        """Test: Story 7.2 AC1 - Explicit threshold value is respected (tuning allowed)"""
+        # Arrange
+        channel_config = {
+            "channel_mode": "PROD",
+            "confidence_threshold": 0.70,  # Explicit lower threshold for tuning
+        }
+        global_mode = "PROD"
+        llm_response = {
+            "send_to_user": True,
+            "confidence": 0.75,  # Above explicit 0.70, but below default 0.85
+            "risk_level": "LOW",
+        }
+
+        # Act
+        result = make_send_decision(channel_config, global_mode, llm_response)
+
+        # Assert - Should allow because 0.75 >= 0.70 (explicit threshold)
+        assert result["send_to_user"] is True
+        assert result["reason"] == "ALL_GATES_PASSED"
+        assert result["action"] == "SEND_LOG_NO_ALERT"

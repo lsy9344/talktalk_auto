@@ -14,6 +14,12 @@ from talktalk_shared.models.pipeline_state import (
     get_allowed_transitions,
     validate_transition,
 )
+from talktalk_shared.models.sheets_log_row import (
+    INBOX_LOG_COLUMNS,
+    SheetsLogRow,
+    combine_messages,
+    truncate_from_end,
+)
 from talktalk_shared.models.webhook_event import Options, TextContent, WebhookEvent
 
 __all__ = [
@@ -29,4 +35,8 @@ __all__ = [
     "KBChunk",
     "DocumentSection",
     "generate_chunk_id",
+    "SheetsLogRow",
+    "INBOX_LOG_COLUMNS",
+    "combine_messages",
+    "truncate_from_end",
 ]

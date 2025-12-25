@@ -21,6 +21,7 @@ For a comprehensive understanding of the system, read the documents in this orde
 - **[Tech Stack](tech-stack.md)** - Technologies and AWS services
 - **[Coding Standards](coding-standards.md)** - Development and testing standards
 - **[Source Tree](source-tree.md)** - Target folder structure
+- **[Implementation Notes (실수 방지 메모)](implementation-notes.md)** - Common mistakes and prevention guidelines for TalkTalk integration
 
 ### Implementation Status
 

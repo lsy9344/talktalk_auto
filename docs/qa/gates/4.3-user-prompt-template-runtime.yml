@@ -1,0 +1,54 @@
+schema: 1
+story: "4.3"
+story_title: "User Prompt Template (런타임 구성)"
+gate: "PASS"
+status_reason: "User Prompt Template 상수/빌더가 PRD 7.3과 정확히 같고, 치환/optional 처리 테스트가 있으며 전체 pytest(244)도 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T03:25:06Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "SEC-001"
+    severity: low
+    finding: "User Prompt에는 user_id / question_raw 같은 개인정보가 포함됩니다."
+    suggested_action: "LLM 호출 스토리에서 raw 값이 로그/알림에 남지 않게 마스킹/제외를 유지하세요."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 2 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "LLM 호출 시 prompt 내용(특히 question_raw/user_id) 로그 출력 금지 유지"
+      - "template 치환 로직 변경 시, question_raw가 그대로 유지되는지 테스트로 확인"
+
+quality_score: 100
+expires: "2026-01-08T03:25:06Z"
+
+evidence:
+  tests_reviewed: 244
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "이 스토리 자체는 상수/치환 함수만 다루며, 로그에 PII를 남기지 않습니다(통합 시 주의)."
+  performance:
+    status: PASS
+    notes: "문자열 치환/정규식 1회로 비용이 작습니다."
+  reliability:
+    status: PASS
+    notes: "optional None 처리 + 회귀 테스트로 치환 로직을 보호합니다."
+  maintainability:
+    status: PASS
+    notes: "Shared Layer 모듈로 분리했고 테스트로 변경을 잡습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "LLM 연결 스토리에서 prompt/응답 JSON 파싱/검증 통합 테스트 추가"
+      refs: ["src/functions/worker/pipeline.py"]

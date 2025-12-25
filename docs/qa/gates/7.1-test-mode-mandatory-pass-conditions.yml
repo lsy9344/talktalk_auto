@@ -1,0 +1,62 @@
+schema: 1
+story: "7.1"
+story_title: "TEST 모드 필수 통과 조건"
+gate: "PASS"
+status_reason: "TEST 모드에서 자동 발송 0건(발송 API 호출 0번), `send` 이벤트의 Sheets append 시도/실패(E005) 알림, TEST 모드 Telegram 알림 트리거, Ingest의 즉시 ACK(200 OK)+SQS enqueue가 유닛 테스트로 고정되어 있고 `python3 -m pytest -q` 379개 테스트가 통과했습니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T10:49:58Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "PERF-001"
+    severity: low
+    finding: "Ingest의 “빠른 200 OK”는 '무거운 작업을 안 한다'로는 테스트가 고정되지만, 실제 시간(ms) 자체를 재지는 않습니다."
+    suggested_action: "운영에서 API Gateway/Lambda duration을 CloudWatch로 보고, 3s/5s 타임아웃에 여유가 있는지 확인하세요."
+    suggested_owner: "dev"
+  - id: "OPS-001"
+    severity: low
+    finding: "Telegram 전송 실패는 non-blocking이라 시스템은 계속 가지만, 그 순간에는 알림이 실제로 못 갈 수 있습니다."
+    suggested_action: "Telegram 실패 로그/지표를 모니터링하고, 필요하면 재시도(또는 대체 알림) 전략을 논의하세요."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 3 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "운영에서 Ingest 200 OK 응답 시간(3s/5s)을 CloudWatch로 추적"
+      - "Sheets(E005)/Telegram 실패율을 지표로 보고 운영 알림 기준 정하기"
+
+quality_score: 100
+expires: "2026-01-08T10:49:58Z"
+
+evidence:
+  tests_reviewed: 379
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "TEST 모드에서는 `make_send_decision()`의 1~2번 게이트로 자동 발송이 차단되고, 유닛 테스트로 Send API 호출 0번이 고정됩니다."
+  performance:
+    status: PASS
+    notes: "Ingest는 검증 + dedup + SQS enqueue만 하고 즉시 200 OK를 반환합니다. 무거운 작업(OpenAI/Sheets/Telegram)은 Worker로 분리됩니다."
+  reliability:
+    status: PASS
+    notes: "Sheets 실패(E005)는 이유에 남기고 계속 진행하며, Telegram 실패도 non-blocking으로 처리됩니다. 전체 테스트가 통과합니다."
+  maintainability:
+    status: PASS
+    notes: "필수 조건(발송 차단/시트 기록/알림/즉시 ACK)이 테스트로 고정되어 회귀를 빨리 잡을 수 있습니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "가능하면 'Ingest → SQS → Worker' 통합 테스트 1개 추가 (운영 리허설용)"
+      refs: ["src/functions/ingest/app.py", "src/functions/worker/pipeline.py"]
+    - action: "Ingest 응답 시간/실패율에 대한 운영 지표와 알림 기준 정리"
+      refs: ["src/functions/ingest/app.py"]
+

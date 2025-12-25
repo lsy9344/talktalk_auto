@@ -1,0 +1,54 @@
+schema: 1
+story: "4.4"
+story_title: "KB Chunks 포맷(권장)"
+gate: "PASS"
+status_reason: "PRD 7.4 포맷 그대로 KB chunks 문자열을 만들고, 0개/여러 개 입력 테스트가 있으며 pytest(252)/ruff/mypy(src) 검증이 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T04:01:53Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "REL-001"
+    severity: low
+    finding: "메타데이터 값(doc_title 등)에 ` | `가 들어가면, 나중에 헤더를 파싱할 때 헷갈릴 수 있습니다."
+    suggested_action: "후속 스토리(citations/파싱)에서 ` | `로 단순 split 하지 말고, key=value 기반 파싱/escape 규칙을 검토하세요."
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 2 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "후속 스토리에서 KB 헤더 파싱 규칙(key=value/escape) 정하기"
+      - "청크 텍스트에 `<KB>`/`</KB>`가 포함되는 특이 케이스 모니터링"
+
+quality_score: 100
+expires: "2026-01-08T04:01:53Z"
+
+evidence:
+  tests_reviewed: 252
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "문자열 포맷터만 추가되어 보안 표면이 작습니다(로그/네트워크 없음)."
+  performance:
+    status: PASS
+    notes: "리스트에 모아서 join 하여 O(n)으로 동작합니다."
+  reliability:
+    status: PASS
+    notes: "0개/필드 누락/멀티라인 입력을 안전하게 처리하고 테스트로 보호합니다."
+  maintainability:
+    status: PASS
+    notes: "Shared Layer 모듈 분리 + 유닛 테스트로 회귀를 줄입니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "후속 스토리에서 KB 헤더 파싱은 ` | ` split 대신 key=value 기반으로 처리 검토"
+      refs: ["src/layers/shared/python/talktalk_shared/prompts/kb_chunks_format.py"]

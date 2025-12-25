@@ -251,12 +251,17 @@ sam local invoke IngestFunction -e events/webhook-event.json
 
 ## 문서
 
+### 설계 문서
 - **전체 PRD**: [docs/prd.md](docs/prd.md)
 - **전체 아키텍처**: [docs/architecture.md](docs/architecture.md)
 - **코딩 표준**: [docs/architecture/coding-standards.md](docs/architecture/coding-standards.md)
 - **기술 스택**: [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md)
 - **소스 트리**: [docs/architecture/source-tree.md](docs/architecture/source-tree.md)
+- **구현 실수 방지 메모**: [docs/architecture/implementation-notes.md](docs/architecture/implementation-notes.md)
 - **PRD Epic 인덱스**: [docs/prd/index.md](docs/prd/index.md)
+
+### 운영 문서
+- **Go-Live 절차 (TEST → PROD 전환)**: [docs/runbooks/go-live.md](docs/runbooks/go-live.md)
 
 ## 비용 예상
 

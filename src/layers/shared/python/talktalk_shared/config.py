@@ -1,6 +1,9 @@
 """Configuration module - centralized environment variable access"""
 import os
 
+# Google Sheets constants
+GOOGLE_SHEETS_INBOX_LOG_TAB = "inbox_log"
+
 
 def get_aws_region() -> str:
     """Get AWS region from environment"""
@@ -110,3 +113,11 @@ def get_vector_index_bucket() -> str:
     if not bucket:
         raise ValueError("VECTOR_INDEX_BUCKET environment variable is required")
     return bucket
+
+
+def get_google_sheets_spreadsheet_id() -> str:
+    """Get Google Sheets Spreadsheet ID for logging"""
+    spreadsheet_id = os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
+    if not spreadsheet_id:
+        raise ValueError("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is required")
+    return spreadsheet_id

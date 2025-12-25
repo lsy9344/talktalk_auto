@@ -1,0 +1,59 @@
+schema: 1
+story: "5.2"
+story_title: "inbox_log 컬럼 정의(권장 스키마)"
+gate: "PASS"
+status_reason: "`INBOX_LOG_COLUMNS`/`SheetsLogRow`로 PRD 8.2 컬럼/순서를 고정했고, 텍스트(줄바꿈/500자) 규칙 헬퍼 + 유닛 테스트가 있으며, pytest/ruff/mypy(src)도 모두 통과합니다."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-12-25T07:02:53Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "OPS-001"
+    severity: low
+    finding: "운영 중 시트 헤더(컬럼명/순서)를 누가 바꾸면, 값 해석이 헷갈릴 수 있습니다."
+    suggested_action: "선택: smoke test에서 헤더가 `INBOX_LOG_COLUMNS`와 같은지 확인하거나, 시트 헤더를 보호(편집 제한)하세요."
+  - id: "ID-001"
+    severity: low
+    finding: "`row_id`가 초(秒) 기반이라 같은 초에 여러 로그가 생기면 값이 겹칠 수 있습니다."
+    suggested_action: "선택: ms/랜덤/카운터를 섞어서 더 유니크하게 만들지 검토하세요."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 1, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "운영에서 시트 헤더/컬럼 순서가 바뀌지 않게 관리"
+      - "`row_id` 중복이 실제로 문제가 되는지(운영 분석) 관찰"
+
+quality_score: 100
+expires: "2026-01-08T07:02:53Z"
+
+evidence:
+  tests_reviewed: 282
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "시크릿/개인정보를 새로 노출하는 변경이 없습니다."
+  performance:
+    status: PASS
+    notes: "단순 모델/헬퍼 + 500자 제한으로 과도한 텍스트를 막습니다."
+  reliability:
+    status: PASS
+    notes: "컬럼 순서/텍스트 규칙/포맷이 유닛 테스트로 보호되고, pytest가 통과합니다."
+  maintainability:
+    status: PASS
+    notes: "스키마를 `SheetsLogRow`로 한 곳에 모았고, ruff/mypy로 품질을 유지합니다."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "smoke test에 시트 헤더(컬럼명/순서) 검증 단계 추가"
+      refs: ["scripts/smoke_test_google_sheets_append.py", "src/layers/shared/python/talktalk_shared/models/sheets_log_row.py"]
+    - action: "`row_id` 유니크성 강화 필요 여부 검토"
+      refs: ["src/layers/shared/python/talktalk_shared/models/sheets_log_row.py", "docs/prd/82-inboxlog-컬럼-정의권장-스키마.md"]

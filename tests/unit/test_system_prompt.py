@@ -7,13 +7,13 @@ Tests verify:
 
 from talktalk_shared.prompts.system_prompt import SYSTEM_PROMPT, build_system_message
 
-
 # Expected text from PRD 7.1 - used as ground truth for comparison
 EXPECTED_PRD_TEXT = """당신은 네이버 톡톡에서 고객 문의에 답변 초안을 작성하는 담당자입니다.
 
 목표:
 - 제공된 지식베이스(KB) 내용에 근거해, 고객에게 보낼 수 있는 "답변 초안"을 생성합니다.
-- 답변이 불확실하거나 리스크가 크면 고객에게 보내지 말고(무응답), 운영자에게 알릴 수 있도록 구조화된 신호를 출력합니다.
+- 답변이 불확실하거나 리스크가 크면 고객에게 보내지 말고(무응답), \
+운영자에게 알릴 수 있도록 구조화된 신호를 출력합니다.
 
 말투/톤:
 - 한국어
