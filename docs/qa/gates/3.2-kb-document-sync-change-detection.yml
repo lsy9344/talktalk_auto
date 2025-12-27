@@ -2,9 +2,9 @@ schema: 1
 story: "3.2"
 story_title: "수집/동기화 (변경 감지로 비용 줄이기)"
 gate: "PASS"
-status_reason: "변경 감지(revision_id)로 스킵/재색인 흐름이 구현되어 있고, pytest/ruff/mypy(src) 검증이 통과합니다."
+status_reason: "변경 감지(revision_id) 기반 스킵/재색인 흐름이 구현되어 있고, pytest/ruff/mypy(src) 재검증이 통과합니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-24T14:05:56Z"
+updated: "2025-12-27T16:54:02Z"
 
 waiver: { active: false }
 
@@ -23,10 +23,10 @@ risk_summary:
       - "배포 패키지에 faiss/numpy 포함 여부 확인"
 
 quality_score: 100
-expires: "2026-01-07T14:05:56Z"
+expires: "2026-01-10T16:54:02Z"
 
 evidence:
-  tests_reviewed: 193
+  tests_reviewed: 390
   risks_identified: 4
   trace:
     ac_covered: [2, 3, 4, 5, 6]
@@ -35,7 +35,7 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "시크릿은 Secrets Manager에서 읽고, 로그에 시크릿/문서 본문이 남지 않게 처리합니다."
+    notes: "시크릿은 SSM Parameter Store(SecureString)에서 읽고, 로그에 시크릿/문서 본문이 남지 않게 처리합니다."
   performance:
     status: PASS
     notes: "revision_id로 미변경 문서를 스킵해 비용을 줄입니다(문서 수 증가 시 모니터링 권장)."

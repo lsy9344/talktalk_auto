@@ -2,9 +2,9 @@ schema: 1
 story: "5.1"
 story_title: "시트 구성(권장)"
 gate: "PASS"
-status_reason: "Spreadsheet ID 설정 + GoogleSheetsClient(재시도/서킷 브레이커) + smoke test 스크립트 + 유닛 테스트가 준비되어 있고, pytest/ruff/mypy(src)도 통과합니다."
+status_reason: "Spreadsheet ID 설정 + GoogleSheetsClient(재시도/서킷 브레이커) + smoke test 스크립트(SSM 안내 보강) + 유닛 테스트가 준비되어 있고, pytest/ruff/mypy(src) 재검증도 통과합니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-25T04:51:59Z"
+updated: "2025-12-27T17:31:16Z"
 
 waiver: { active: false }
 
@@ -23,10 +23,10 @@ risk_summary:
       - "E005(Sheets 기록 실패) 발생률/알림 모니터링"
 
 quality_score: 100
-expires: "2026-01-08T04:51:59Z"
+expires: "2026-01-10T17:31:16Z"
 
 evidence:
-  tests_reviewed: 262
+  tests_reviewed: 390
   risks_identified: 2
   trace:
     ac_covered: [1, 2, 3, 4]
@@ -35,7 +35,7 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "서비스 계정 키는 Secrets Manager에서만 읽고, 테스트는 모킹합니다."
+    notes: "서비스 계정 키는 SSM Parameter Store(SecureString)에서만 읽고, 테스트는 모킹합니다."
   performance:
     status: PASS
     notes: "append 1회 호출 + 재시도 2회 제한, 서비스 객체 캐시로 불필요한 초기화를 줄입니다."

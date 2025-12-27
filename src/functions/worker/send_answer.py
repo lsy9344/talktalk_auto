@@ -11,7 +11,7 @@ from src.functions.worker.decision import SendDecision, make_send_decision
 from talktalk_shared.clients.talktalk_client import TalkTalkClient
 from talktalk_shared.repositories.channel_config import ChannelConfigRepository
 from talktalk_shared.utils.circuit_breaker import CircuitBreakerOpenError
-from talktalk_shared.utils.secrets import SecretsManagerError, get_secret_string
+from talktalk_shared.utils.secrets import ParameterStoreError, get_parameter
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def send_answer_if_allowed(
     This function orchestrates:
     1. Get channel config from DynamoDB
     2. Make send decision using 3-gate system
-    3. Get auth token from Secrets Manager (or use override for testing)
+    3. Get auth token from SSM Parameter Store (or use override for testing)
     4. Call TalkTalk Send API if approved
 
     Args:
@@ -151,28 +151,29 @@ async def send_answer_if_allowed(
             auth_token = channel_auth_token_override
             logger.debug("Using auth token override")
         else:
-            # Get from Secrets Manager
-            talktalk_auth_secret_arn = channel_config.get("talktalk_auth_secret_arn")
-            if not talktalk_auth_secret_arn:
+            # Get from SSM Parameter Store (SecureString)
+            parameter_name = channel_config.get("talktalk_auth_parameter_name")
+
+            if not parameter_name:
                 logger.error(
-                    "Missing talktalk_auth_secret_arn in channel config",
+                    "Missing talktalk_auth_parameter_name in channel config",
                     extra={"channel_id": channel_id},
                 )
                 return {
                     "sent": False,
-                    "reason": "MISSING_AUTH_SECRET_ARN",
+                    "reason": "MISSING_AUTH_PARAMETER_NAME",
                     "error": {
                         "error_code": "E006",
-                        "error_message": "Missing talktalk_auth_secret_arn",
+                        "error_message": "Missing talktalk_auth_parameter_name",
                         "should_alert": True,
                     },
                 }
 
-            auth_token = get_secret_string(talktalk_auth_secret_arn)
+            auth_token = get_parameter(parameter_name)
 
-    except SecretsManagerError as e:
+    except ParameterStoreError as e:
         logger.error(
-            "Failed to get auth token from Secrets Manager",
+            "Failed to get auth token from SSM Parameter Store",
             extra={
                 "channel_id": channel_id,
                 "error": str(e),

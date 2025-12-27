@@ -86,8 +86,8 @@ class TestMaskQuestion:
         assert "[EMAIL]" in result
         assert "user@example.com" not in result
 
-    def test_mask_credit_card_number(self):
-        """Credit card numbers should be masked"""
+    def test_mask_credit_card_number_continuous(self):
+        """Credit card numbers (continuous digits) should be masked"""
         # Arrange
         question = "카드번호 1234567890123456"
 
@@ -97,6 +97,43 @@ class TestMaskQuestion:
         # Assert
         assert "[CARD]" in result
         assert "1234567890123456" not in result
+
+    def test_mask_credit_card_number_with_hyphens(self):
+        """Credit card numbers with hyphens should be masked"""
+        # Arrange
+        question = "카드번호 1234-5678-9012-3456입니다"
+
+        # Act
+        result = mask_question(question)
+
+        # Assert
+        assert "[CARD]" in result
+        assert "1234-5678-9012-3456" not in result
+
+    def test_mask_credit_card_number_with_spaces(self):
+        """Credit card numbers with spaces should be masked"""
+        # Arrange
+        question = "카드번호 1234 5678 9012 3456"
+
+        # Act
+        result = mask_question(question)
+
+        # Assert
+        assert "[CARD]" in result
+        assert "1234 5678 9012 3456" not in result
+
+    def test_mask_credit_card_number_mixed_separators(self):
+        """Credit card numbers with mixed hyphens and spaces should be masked"""
+        # Arrange
+        question = "카드: 1234-5678 9012-3456"
+
+        # Act
+        result = mask_question(question)
+
+        # Assert
+        assert "[CARD]" in result
+        assert "1234-5678" not in result
+        assert "9012-3456" not in result
 
     def test_mask_multiple_pii_types(self):
         """Multiple PII types should all be masked"""

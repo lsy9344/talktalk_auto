@@ -6,6 +6,7 @@ from google.oauth2 import service_account  # type: ignore[import-untyped]
 from googleapiclient.discovery import build  # type: ignore[import-untyped]
 from googleapiclient.errors import HttpError  # type: ignore[import-untyped]
 
+from talktalk_shared.config import get_google_sa_json
 from talktalk_shared.models.kb_chunk import DocumentSection
 from talktalk_shared.utils.circuit_breaker import (
     CircuitBreaker,
@@ -13,7 +14,6 @@ from talktalk_shared.utils.circuit_breaker import (
     CircuitBreakerOpenError,
 )
 from talktalk_shared.utils.logger import get_logger
-from talktalk_shared.utils.secrets import get_secret
 
 logger = get_logger(__name__)
 
@@ -42,8 +42,8 @@ class GoogleDocsClient:
             Google Docs API service instance
         """
         if self._service is None:
-            # Get service account credentials from Secrets Manager
-            sa_json_str = get_secret("GOOGLE_SA_JSON")
+            # Get service account credentials from SSM Parameter Store
+            sa_json_str = get_google_sa_json()
             sa_dict = json.loads(sa_json_str)
 
             credentials = service_account.Credentials.from_service_account_info(

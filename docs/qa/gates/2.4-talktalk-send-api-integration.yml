@@ -2,9 +2,9 @@ schema: 1
 story: "2.4"
 story_title: "PROD 전송(보내기 API) 구현 (TalkTalk Send API Integration)"
 gate: "PASS"
-status_reason: "PROD에서만 조건 충족 시 Send API를 호출하고, 토큰은 Secrets Manager에서 가져옵니다. timeout/재시도/서킷브레이커도 포함되어 있으며, pytest/ruff/mypy로 확인했습니다."
+status_reason: "스토리 문서(AC/Tasks/Dev Notes)가 SSM(talktalk_auth_parameter_name) 기준으로 정리되어, 구현과 일치합니다. pytest 390 + ruff + mypy(src)도 통과했습니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-23T17:20:24Z"
+updated: "2025-12-27T18:14:49Z"
 
 waiver: { active: false }
 
@@ -22,10 +22,10 @@ risk_summary:
       - "timeout 재시도 시 중복 발송 위험(선택) 검토"
 
 quality_score: 100
-expires: "2026-01-06T17:20:24Z"
+expires: "2026-01-10T18:14:56Z"
 
 evidence:
-  tests_reviewed: 29
+  tests_reviewed: 390
   risks_identified: 1
   trace:
     ac_covered: [1, 2, 3, 4, 5, 6, 7]
@@ -34,7 +34,7 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "Authorization 토큰은 Secrets Manager에서 읽고, 토큰/고객 원문이 로그에 남지 않도록 마스킹합니다."
+    notes: "Authorization 토큰은 SSM Parameter Store(SecureString)에서 읽고, 토큰/고객 원문이 로그에 남지 않도록 마스킹합니다."
   performance:
     status: PASS
     notes: "timeout 10초, 1회 재시도만 허용하여 지연/중복 위험을 제한합니다."
@@ -43,7 +43,7 @@ nfr_validation:
     notes: "5xx/timeout만 1회 재시도 + Circuit Breaker(연속 5회 실패 시 10분 차단)로 연쇄 실패를 줄입니다."
   maintainability:
     status: PASS
-    notes: "client/secrets/orchestrator로 역할 분리 + 유닛 테스트(29개)로 회귀를 막습니다."
+    notes: "client/secrets/orchestrator로 역할 분리 + 유닛 테스트로 회귀를 막습니다."
 
 recommendations:
   immediate: []

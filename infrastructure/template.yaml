@@ -23,6 +23,11 @@ Globals:
         MAX_MESSAGES_PER_AGGREGATION: '10'
         LOG_LEVEL: INFO
         SERVICE_NAME: talktalk-auto
+        # SSM Parameter Store parameter names (SecureString)
+        TELEGRAM_BOT_TOKEN_PARAM_NAME: /talktalk-auto/secrets/telegram-bot-token
+        OPENAI_API_KEY_PARAM_NAME: /talktalk-auto/secrets/openai-api-key
+        GOOGLE_SA_JSON_PARAM_NAME: /talktalk-auto/secrets/google-sa-json
+        # Non-secret configuration (can use SSM resolve or plain text)
         TELEGRAM_CHAT_ID: '{{resolve:ssm:/talktalk-auto/telegram-chat-id:1}}'
         GOOGLE_SHEETS_SPREADSHEET_ID: '{{resolve:ssm:/talktalk-auto/google-sheets-spreadsheet-id:1}}'
 
@@ -230,10 +235,17 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - secretsmanager:GetSecretValue
+                - ssm:GetParameter
               Resource:
-                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:OPENAI_API_KEY-*
-                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:GOOGLE_SA_JSON-*
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/telegram-bot-token
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/openai-api-key
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/google-sa-json
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/channels/*/talktalk-auth-token
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource:
+                - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm
       Events:
         WorkerQueueEvent:
           Type: SQS
@@ -268,10 +280,16 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - secretsmanager:GetSecretValue
+                - ssm:GetParameter
               Resource:
-                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:GOOGLE_SA_JSON-*
-                - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:OPENAI_API_KEY-*
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/telegram-bot-token
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/openai-api-key
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/talktalk-auto/secrets/google-sa-json
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource:
+                - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm
       Events:
         WeeklySchedule:
           Type: Schedule

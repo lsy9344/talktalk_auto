@@ -203,6 +203,22 @@ def load_index_and_chunks(
         return None
 
 
+def _extract_chunk_metadata(chunk_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extract metadata dict from chunk JSON.
+
+    We support 2 shapes for compatibility:
+
+    1) {"text": "...", "metadata": {...}}
+    2) {"text": "...", "doc_id": "...", ...}  # KBChunk shape from Indexer
+    """
+    metadata_raw = chunk_data.get("metadata")
+    if isinstance(metadata_raw, dict):
+        return metadata_raw
+
+    return {k: v for k, v in chunk_data.items() if k != "text"}
+
+
 def search_in_documents(
     doc_ids: List[str],
     question_embedding: List[float],
@@ -247,9 +263,12 @@ def search_in_documents(
                     continue
 
                 chunk_data = chunks[idx]
+                if not isinstance(chunk_data, dict):
+                    continue
+
                 chunk = RetrievedChunk.from_metadata(
                     text=chunk_data.get("text", ""),
-                    metadata=chunk_data.get("metadata", {}),
+                    metadata=_extract_chunk_metadata(chunk_data),
                     score=float(dist),
                 )
                 all_results.append((chunk, float(dist)))

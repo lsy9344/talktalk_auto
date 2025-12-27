@@ -17,10 +17,10 @@ def mock_google_service():
 
 @pytest.fixture
 def mock_secrets():
-    """Mock secrets manager"""
-    with patch("talktalk_shared.clients.google_docs_client.get_secret") as mock_get_secret:
-        mock_get_secret.return_value = '{"type": "service_account", "project_id": "test"}'
-        yield mock_get_secret
+    """Mock config getter for Google SA JSON"""
+    with patch("talktalk_shared.clients.google_docs_client.get_google_sa_json") as mock_get_sa:
+        mock_get_sa.return_value = '{"type": "service_account", "project_id": "test"}'
+        yield mock_get_sa
 
 
 @pytest.fixture

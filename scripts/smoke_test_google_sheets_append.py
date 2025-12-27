@@ -12,7 +12,7 @@ Usage:
 
 Prerequisites:
     - GOOGLE_SHEETS_SPREADSHEET_ID environment variable or .env file
-    - GOOGLE_SA_JSON secret in AWS Secrets Manager
+    - GOOGLE_SA_JSON_PARAM_NAME 환경 변수(SSM Parameter Store SecureString 경로)
     - Service Account has Editor permissions on the spreadsheet
     - inbox_log sheet/tab exists in the spreadsheet
 
@@ -73,6 +73,15 @@ def test_google_sheets_append() -> None:
         print("Please set GOOGLE_SHEETS_SPREADSHEET_ID in your .env file or environment")
         print("Example: GOOGLE_SHEETS_SPREADSHEET_ID=1ABC-xyz_spreadsheet_id")
         sys.exit(1)
+
+    google_sa_param_name = os.getenv("GOOGLE_SA_JSON_PARAM_NAME", "")
+    if not google_sa_param_name:
+        print("❌ Configuration error: GOOGLE_SA_JSON_PARAM_NAME is required")
+        print()
+        print("Please set GOOGLE_SA_JSON_PARAM_NAME in your .env file or environment")
+        print("Example: GOOGLE_SA_JSON_PARAM_NAME=/talktalk-auto/secrets/google-sa-json")
+        sys.exit(1)
+    print(f"✅ GOOGLE_SA_JSON_PARAM_NAME: {google_sa_param_name}")
 
     print(f"✅ Sheet tab name: {GOOGLE_SHEETS_INBOX_LOG_TAB}")
     print()
@@ -136,8 +145,11 @@ def test_google_sheets_append() -> None:
         print("Troubleshooting:")
         print("1. Verify Service Account has Editor permissions on the spreadsheet")
         print("2. Verify inbox_log sheet/tab exists in the spreadsheet")
-        print("3. Check AWS Secrets Manager contains valid GOOGLE_SA_JSON")
-        print("4. Verify network connectivity to Google Sheets API")
+        print("3. Check AWS SSM Parameter Store has valid GOOGLE SA JSON (SecureString)")
+        print(f"   - Param: {google_sa_param_name}")
+        print("4. Verify AWS credentials can read/decrypt the parameter")
+        print("   (ssm:GetParameter, kms:Decrypt)")
+        print("5. Verify network connectivity to Google Sheets API")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {str(e)}")

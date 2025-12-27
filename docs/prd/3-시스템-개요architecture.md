@@ -22,11 +22,11 @@
 * **EventBridge Scheduler**
 
   * 문서 동기화/재색인 스케줄(예: 매일/주1회 + 수동 트리거)
-* **Secrets Manager**
+* **SSM Parameter Store (SecureString)**
 
-  * OpenAI API Key
-  * 채널별 톡톡 Authorization 토큰
-  * Google SA 자격증명(가능하면 최소권한)
-  * Telegram Bot Token
+  * `/talktalk-auto/secrets/openai-api-key`
+  * `/talktalk-auto/secrets/google-sa-json` (Advanced SecureString)
+  * `/talktalk-auto/secrets/telegram-bot-token`
+  * `/talktalk-auto/channels/{channel_id}/talktalk-auth-token`
 
 ---

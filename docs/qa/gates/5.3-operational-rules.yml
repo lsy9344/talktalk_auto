@@ -2,9 +2,9 @@ schema: 1
 story: "5.3"
 story_title: "운영 규칙"
 gate: "PASS"
-status_reason: "TEST/PROD 운영 규칙(`action_taken`)과 PII 마스킹이 유닛 테스트로 확인되며, Worker 파이프라인에서 RAG chunk 타입 불일치로 런타임 에러가 날 수 있는 부분도 수정했습니다."
+status_reason: "TEST/PROD 운영 규칙(`action_taken`)과 PII 마스킹이 유닛 테스트로 확인되며, pytest/ruff/mypy(src) 재검증도 통과합니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-25T07:54:02Z"
+updated: "2025-12-27T17:42:02Z"
 
 waiver: { active: false }
 
@@ -27,10 +27,10 @@ risk_summary:
       - "`telegram_alert_sent` 필드 의미(전송 성공/트리거 여부)를 팀에서 합의"
 
 quality_score: 100
-expires: "2026-01-08T07:54:02Z"
+expires: "2026-01-10T17:42:02Z"
 
 evidence:
-  tests_reviewed: 310
+  tests_reviewed: 390
   risks_identified: 2
   trace:
     ac_covered: [1, 2, 3, 4]

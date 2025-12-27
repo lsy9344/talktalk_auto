@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import boto3
 import pytest
-from moto import mock_dynamodb, mock_s3
+from moto import mock_dynamodb, mock_s3, mock_ssm
 
 # Add indexer function to path
 indexer_path = Path(__file__).parent.parent.parent / "src" / "functions" / "indexer"
@@ -36,14 +36,22 @@ def mock_env_vars():
     os.environ["VECTOR_INDEX_BUCKET"] = "test-vectorindex-bucket"
     os.environ["LOG_LEVEL"] = "INFO"
     os.environ["SERVICE_NAME"] = "test-talktalk"
-    os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"
+    os.environ["TELEGRAM_BOT_TOKEN_PARAM_NAME"] = "/talktalk-auto/secrets/telegram-bot-token"
     os.environ["TELEGRAM_CHAT_ID"] = "test-chat-id"
 
 
 @pytest.fixture
 def aws_mocks(aws_credentials, mock_env_vars):
     """Mock AWS services used in this test (DynamoDB + S3)."""
-    with mock_dynamodb(), mock_s3():
+    with mock_dynamodb(), mock_s3(), mock_ssm():
+        # Create required SSM Parameter Store parameters
+        ssm = boto3.client("ssm", region_name="ap-northeast-2")
+        ssm.put_parameter(
+            Name="/talktalk-auto/secrets/telegram-bot-token",
+            Value="test-token",
+            Type="SecureString",
+            Overwrite=True,
+        )
         yield
 
 

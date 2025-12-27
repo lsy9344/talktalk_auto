@@ -3,13 +3,13 @@ from typing import List, Optional
 
 from openai import OpenAI, OpenAIError
 
+from talktalk_shared.config import get_openai_api_key
 from talktalk_shared.utils.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerOpenError,
 )
 from talktalk_shared.utils.logger import get_logger
-from talktalk_shared.utils.secrets import get_secret
 
 logger = get_logger(__name__)
 
@@ -39,7 +39,7 @@ class OpenAIClient:
             OpenAI client instance
         """
         if self._client is None:
-            api_key = get_secret("OPENAI_API_KEY")
+            api_key = get_openai_api_key()
             self._client = OpenAI(api_key=api_key, timeout=30.0, max_retries=2)
             logger.info("OpenAI client initialized")
 

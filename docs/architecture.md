@@ -490,12 +490,12 @@ graph TB
             LIDX[Lambda: Indexer<br/>1GB RAM<br/>Docs Sync]
         end
 
-        subgraph "Data Layer"
-            DDB[(DynamoDB<br/>On-Demand)]
-            S3[(S3<br/>Vector Indices)]
-            SM[Secrets Manager<br/>API Keys]
-        end
-    end
+	        subgraph "Data Layer"
+	            DDB[(DynamoDB<br/>On-Demand)]
+	            S3[(S3<br/>Vector Indices)]
+	            SSM[SSM Parameter Store<br/>SecureString]
+	        end
+	    end
 
     TT -->|Webhook POST| APIG
     APIG --> LI
@@ -517,9 +517,9 @@ graph TB
     LIDX -->|Embed & Store| S3
     LIDX -->|Update Metadata| DDB
 
-    LI -.->|Read Secrets| SM
-    LW -.->|Read Secrets| SM
-    LIDX -.->|Read Secrets| SM
+	    LI -.->|Read Parameters| SSM
+	    LW -.->|Read Parameters| SSM
+	    LIDX -.->|Read Parameters| SSM
 
     style TT fill:#e1f5e1
     style APIG fill:#fff4e6
@@ -546,18 +546,18 @@ graph TB
    - **VectorIndexMetadata:** Track document versions for change detection
 5. **S3 Bucket:** Stores FAISS vector indices for each channel's knowledge base
 6. **EventBridge Scheduler:** Triggers weekly (and manual) document synchronization
-7. **Secrets Manager:** Stores sensitive API credentials (see below)
+7. **SSM Parameter Store (SecureString):** Stores sensitive config/secrets (see below)
 
-**Secrets Manager Contents:**
+#### SSM Parameter Store Parameters (SecureString)
 
-The following secrets are stored in AWS Secrets Manager and accessed by Lambda functions via IAM roles:
+The following values are stored in AWS SSM Parameter Store (SecureString) and accessed by Lambda functions via IAM roles:
 
-- **OpenAI API Key** (`OPENAI_API_KEY`): For GPT-4o-mini and text-embedding-3-small API calls
-- **TalkTalk Authorization Token** (`TALKTALK_AUTH_TOKEN`): For sending responses back to Naver TalkTalk channels
-- **Google Service Account JSON** (`GOOGLE_SA_JSON`): For accessing Google Docs (knowledge base) and Google Sheets (audit log)
-- **Telegram Bot Token** (`TELEGRAM_BOT_TOKEN`): For sending operator alerts to designated Telegram chat
+- **OpenAI API Key** (`/talktalk-auto/secrets/openai-api-key`): For GPT-4o-mini and text-embedding-3-small API calls
+- **TalkTalk Authorization Token (per channel)** (`/talktalk-auto/channels/{channel_id}/talktalk-auth-token`): For sending responses back to Naver TalkTalk channels
+- **Google Service Account JSON** (`/talktalk-auto/secrets/google-sa-json`, Advanced): For accessing Google Docs (knowledge base) and Google Sheets (audit log)
+- **Telegram Bot Token** (`/talktalk-auto/secrets/telegram-bot-token`): For sending operator alerts to designated Telegram chat
 
-All secrets are encrypted at rest and accessed only through IAM policies attached to Lambda execution roles.
+All parameters are encrypted at rest (SecureString) and accessed only through IAM policies attached to Lambda execution roles.
 
 ### Architectural and Design Patterns
 
@@ -606,7 +606,7 @@ All secrets are encrypted at rest and accessed only through IAM policies attache
 ### 클라우드 인프라
 
 - **Provider:** AWS
-- **핵심 서비스:** Lambda, API Gateway, SQS, DynamoDB, S3, EventBridge, Secrets Manager
+- **핵심 서비스:** Lambda, API Gateway, SQS, DynamoDB, S3, EventBridge, SSM Parameter Store
 - **배포 리전:** ap-northeast-2 (서울)
 
 ### 기술 스택 테이블
@@ -624,7 +624,7 @@ All secrets are encrypted at rest and accessed only through IAM policies attache
 | **메시지 큐** | SQS Standard | - | 이벤트 버퍼링 | 저비용 (100만건/월 무료), 높은 처리량, Lambda 네이티브 통합 |
 | **스토리지** | S3 Standard | - | 벡터 인덱스 저장 | 극소량 데이터 (<5MB) 저장 비용 무시 가능, 내구성 99.999999999% |
 | **스케줄러** | EventBridge Scheduler | - | 주간 문서 동기화 | 완전 관리형, 크론 표현식 지원, Lambda 트리거 |
-| **비밀 관리** | AWS Secrets Manager | - | API 키 저장 | 자동 로테이션, Lambda IAM 통합, 암호화 |
+| **비밀 관리** | AWS SSM Parameter Store (SecureString) | - | API 키/토큰 저장 | 비용 절감, Lambda IAM 통합, 암호화 |
 | **API 클라이언트 (OpenAI)** | openai | 1.10.0+ | OpenAI API 호출 | 공식 SDK, async 지원, 타입 힌트 |
 | **API 클라이언트 (Google)** | google-api-python-client | 2.111.0+ | Google Docs/Sheets API | 공식 SDK, OAuth2 지원 |
 | **HTTP 클라이언트** | httpx | 0.26.0+ | Naver TalkTalk API | async 지원, requests 대비 빠름, 타임아웃 제어 우수 |
@@ -652,7 +652,7 @@ All secrets are encrypted at rest and accessed only through IAM policies attache
 - DynamoDB: <$1 (온디맨드, 극소량 읽기/쓰기)
 - SQS: 프리티어 (100만건/월 무료)
 - S3: <$0.10 (5MB 미만 저장)
-- Secrets Manager: $0.40 (시크릿 1개당)
+- SSM Parameter Store: Standard는 대부분 무료, Advanced는 비용이 생길 수 있음 (예: Google SA JSON)
 - OpenAI API: $1-2 (gpt-4o-mini + embeddings)
 - **총 예상 비용: $2-4/월**
 
@@ -673,7 +673,8 @@ PRD 요구사항과 아키텍처 패턴을 기반으로 핵심 데이터 엔티�
 - `doc_ids`: List<String> - 이 채널 전용 Google Docs 문서 ID 목록
 - `common_doc_enabled`: Boolean - 공통 KB 사용 여부 (기본: true)
 - `confidence_threshold`: Number - 자동 발송 허용 최소 신뢰도 (기본: 0.80)
-- `talktalk_auth_secret_arn`: String - Secrets Manager ARN (채널별 Authorization 토큰)
+- `talktalk_auth_parameter_name`: String - SSM Parameter 이름/경로 (채널별 Authorization 토큰)
+- (마이그레이션 기간) `talktalk_auth_secret_arn`: Optional[String] - Secrets Manager ARN (구버전, 점진적 제거)
 - `enabled`: Boolean - 채널 활성화 여부
 - `created_at`: String (ISO8601)
 - `updated_at`: String (ISO8601)
@@ -836,7 +837,7 @@ PRD 요구사항과 아키텍처 패턴을 기반으로 핵심 데이터 엔티�
 - Google Sheets API: 로그 기록
 - TalkTalk Send API: 답변 전송
 - Telegram Bot API: 알림
-- Secrets Manager: API 키 조회
+- SSM Parameter Store: 파라미터 조회
 
 **기술 스택:**
 - Python 3.11, Lambda 1GB RAM, 타임아웃 120초
@@ -915,7 +916,7 @@ PRD 요구사항과 아키텍처 패턴을 기반으로 핵심 데이터 엔티�
 - `logger.py`: 구조화된 JSON 로깅
 - `masking.py`: PII 마스킹 (전화번호, 이메일 등)
 - `text_utils.py`: 한국어 텍스트 처리
-- `secrets.py`: Secrets Manager 조회 및 캐싱
+- `secrets.py`: SSM Parameter Store 조회 및 캐싱
 
 **4. 도메인 모델 (Pydantic):**
 - `WebhookEvent`: 톡톡 웹훅 스키마
@@ -958,14 +959,14 @@ graph TB
         MODEL[Domain Models]
     end
 
-    subgraph "AWS Services"
-        APIG[API Gateway]
-        SQS[SQS Queue]
-        DDB[(DynamoDB)]
-        S3[(S3)]
-        SM[Secrets Manager]
-        EB[EventBridge]
-    end
+	    subgraph "AWS Services"
+	        APIG[API Gateway]
+	        SQS[SQS Queue]
+	        DDB[(DynamoDB)]
+	        S3[(S3)]
+	        SSM[SSM Parameter Store<br/>SecureString]
+	        EB[EventBridge]
+	    end
 
     TT --> APIG
     APIG --> INGEST
@@ -989,9 +990,9 @@ graph TB
     WORKER --> S3
     INDEXER --> S3
 
-    INGEST -.reads.-> SM
-    WORKER -.reads.-> SM
-    INDEXER -.reads.-> SM
+	    INGEST -.reads.-> SSM
+	    WORKER -.reads.-> SSM
+	    INDEXER -.reads.-> SSM
 ```
 
 ---
@@ -1025,7 +1026,7 @@ graph TB
 - **목적:** 임베딩 생성 (RAG) 및 답변 생성 (LLM)
 - **문서:** https://platform.openai.com/docs/api-reference
 - **Base URL:** `https://api.openai.com/v1`
-- **인증:** Bearer Token (API Key, Secrets Manager 저장)
+- **인증:** Bearer Token (API Key, SSM Parameter Store(SecureString) 저장)
 - **Rate Limits:**
   - gpt-4o-mini: 30,000 RPM (극소량 트래픽으로 문제 없음)
   - text-embedding-3-small: 5,000 RPM
@@ -1051,7 +1052,7 @@ graph TB
 - **목적:** 지식 베이스 문서 읽기 및 변경 감지
 - **문서:** https://developers.google.com/docs/api
 - **Base URL:** `https://docs.googleapis.com/v1`
-- **인증:** Service Account OAuth2 (JSON 키, Secrets Manager 저장)
+- **인증:** Service Account OAuth2 (JSON 키, SSM Parameter Store(SecureString) 저장)
 - **Rate Limits:** 300 read requests/minute (충분)
 
 **사용 엔드포인트:**
@@ -1231,7 +1232,7 @@ if event.get("options", {}).get("chatbot") is True:
 - **목적:** PROD 모드에서 고객에게 답변 자동 전송
 - **문서:** https://github.com/navertalk/chatbot-api (PRD 참조)
 - **Base URL:** `https://gw.talk.naver.com`
-- **인증:** Authorization Header (채널별 토큰, Secrets Manager 저장)
+- **인증:** Authorization Header (채널별 토큰, SSM Parameter Store(SecureString) 저장)
 - **Rate Limits:** 명시되지 않음 (10-30건/일이므로 문제 없음)
 
 **사용 엔드포인트:**
@@ -1259,7 +1260,7 @@ if event.get("options", {}).get("chatbot") is True:
 - **목적:** 운영자에게 불확실/오류 케이스 실시간 알림 (PRD Section 9)
 - **문서:** https://core.telegram.org/bots/api
 - **Base URL:** `https://api.telegram.org/bot{token}`
-- **인증:** Bot Token (Secrets Manager 저장)
+- **인증:** Bot Token (SSM Parameter Store(SecureString) 저장)
 - **Rate Limits:** 30 messages/second (충분)
 
 **사용 엔드포인트:**
@@ -1607,7 +1608,7 @@ talktalk_auto/
 
 - **도구:** AWS SAM 1.108.0+
 - **위치:** `infrastructure/template.yaml`
-- **접근 방식:** 모든 AWS 리소스를 SAM 템플릿으로 정의 (Lambda, API Gateway, DynamoDB, SQS, S3, EventBridge, Secrets Manager)
+- **접근 방식:** 모든 AWS 리소스를 SAM 템플릿으로 정의 (Lambda, API Gateway, DynamoDB, SQS, S3, EventBridge, SSM Parameter Store)
 
 ### 배포 전략
 
@@ -1784,9 +1785,9 @@ talktalk_auto/
 - **외부 API 호출:** 반드시 타임아웃 + 재시도 + Circuit Breaker 적용
   - 모든 API 클라이언트는 `clients/` 모듈 사용
 - **환경 변수:** `config.py`를 통해서만 접근, 직접 os.getenv() 금지
-  - 나쁜 예: `os.getenv("OPENAI_API_KEY")`
+  - 나쁜 예: `os.getenv("OPENAI_API_KEY_PARAM_NAME")`
   - 좋은 예: `config.get_openai_api_key()`
-- **secrets:** 하드코딩 절대 금지, Secrets Manager 사용 필수
+- **secrets:** 하드코딩 절대 금지, SSM Parameter Store(SecureString) 사용
 - **PRD 프롬프트 준수:** LLM 호출 시 PRD Section 7의 프롬프트 그대로 사용
   - 프롬프트 수정 시 아키텍트와 협의 필요
 
@@ -1927,18 +1928,18 @@ def test_decision_logic_test_mode_always_no_send(mock_config):
   - Telegram: Bot Token
 - **세션 관리:** Stateless (세션 없음)
 - **필수 패턴:**
-  - 모든 API 키는 Secrets Manager에 저장
+- 모든 API 키/토큰은 SSM Parameter Store(SecureString)에 저장
   - Lambda 실행 시 캐싱 (성능 최적화, 1시간 TTL)
   - 하드코딩 절대 금지
 
 ### 비밀 관리
 
 - **개발 환경:** `.env` 파일 (gitignore, `.env.example` 템플릿 제공)
-- **프로덕션 환경:** AWS Secrets Manager
+- **프로덕션 환경:** AWS SSM Parameter Store (SecureString)
 - **코드 요구사항:**
   - 절대 secrets를 로그, 에러 메시지, Telegram에 노출하지 않음
   - `secrets.py` 모듈을 통해서만 접근
-  - 로테이션: 수동 (필요 시 Secrets Manager에서 재설정)
+  - 교체: 수동 (필요 시 SSM Parameter 값을 업데이트)
 
 ### API 보안
 
@@ -1952,7 +1953,7 @@ def test_decision_logic_test_mode_always_no_send(mock_config):
 - **저장 시 암호화:**
   - DynamoDB: 기본 암호화 활성화 (AWS-managed keys)
   - S3: 기본 암호화 활성화 (SSE-S3)
-  - Secrets Manager: 자동 암호화
+  - SSM Parameter Store(SecureString): 자동 암호화
 - **전송 중 암호화:** 모든 API 호출 TLS 1.2+
 - **PII 처리:**
   - Google Sheets `question_raw` 컬럼: 원문 저장 허용 (PRD 요구사항)
@@ -2009,10 +2010,18 @@ pip install -r requirements-dev.txt
 # 3. AWS SAM 초기화
 sam init --name talktalk-auto --runtime python3.11
 
-# 4. Secrets Manager에 비밀 등록
+# 4. SSM Parameter Store에 비밀 등록 (SecureString)
 python scripts/setup_google_auth.py
-aws secretsmanager create-secret --name talktalk-auto/openai-api-key
-aws secretsmanager create-secret --name talktalk-auto/telegram-bot-token
+
+# OpenAI API Key
+aws ssm put-parameter --name /talktalk-auto/secrets/openai-api-key --type SecureString --value "<OPENAI_API_KEY>" --overwrite
+
+# Telegram Bot Token
+aws ssm put-parameter --name /talktalk-auto/secrets/telegram-bot-token --type SecureString --value "<TELEGRAM_BOT_TOKEN>" --overwrite
+
+# Google Service Account JSON (Advanced SecureString)
+# 값이 길면 AWS Console에서 넣는 게 더 쉽습니다.
+aws ssm put-parameter --name /talktalk-auto/secrets/google-sa-json --type SecureString --tier Advanced --value "<GOOGLE_SA_JSON>" --overwrite
 ```
 
 ### 3. 개발 작업 시작

@@ -9,11 +9,9 @@ import pytest
 
 from src.functions.worker.send_answer import send_answer_if_allowed
 from talktalk_shared.utils.circuit_breaker import CircuitBreakerOpenError
-from talktalk_shared.utils.secrets import SecretsManagerError
+from talktalk_shared.utils.secrets import ParameterStoreError
 
-TEST_SECRET_ARN = (
-    "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:test-secret"
-)
+TEST_TALKTALK_AUTH_PARAMETER_NAME = "/talktalk-auto/channels/wc123456/talktalk-auth-token"
 
 
 class MockChannelConfigRepo:
@@ -53,11 +51,11 @@ class MockTalkTalkClient:
         return self.should_succeed
 
 
-def mock_get_secret_string(secret_arn: str, **kwargs) -> str:
-    """Mock get_secret_string for testing."""
-    if secret_arn == TEST_SECRET_ARN:
-        return "test_auth_token_from_secrets"
-    raise SecretsManagerError(f"Secret not found: {secret_arn}")
+def mock_get_parameter(parameter_name: str, **kwargs) -> str:
+    """Mock get_parameter for testing."""
+    if parameter_name == TEST_TALKTALK_AUTH_PARAMETER_NAME:
+        return "test_auth_token_from_ssm"
+    raise ParameterStoreError(f"Parameter not found: {parameter_name}")
 
 
 @pytest.mark.asyncio
@@ -68,7 +66,7 @@ async def test_send_when_all_conditions_met() -> None:
         "channel_id": "wc123456",
         "channel_mode": "PROD",
         "confidence_threshold": 0.80,
-        "talktalk_auth_secret_arn": TEST_SECRET_ARN,
+        "talktalk_auth_parameter_name": TEST_TALKTALK_AUTH_PARAMETER_NAME,
     }
     llm_response = {
         "send_to_user": True,
@@ -83,8 +81,8 @@ async def test_send_when_all_conditions_met() -> None:
 
     # Mock secrets module
     import src.functions.worker.send_answer as send_answer_module
-    original_get_secret = send_answer_module.get_secret_string
-    send_answer_module.get_secret_string = mock_get_secret_string
+    original_get_parameter = send_answer_module.get_parameter
+    send_answer_module.get_parameter = mock_get_parameter
 
     # Act
     result = await send_answer_if_allowed(
@@ -98,14 +96,14 @@ async def test_send_when_all_conditions_met() -> None:
     )
 
     # Restore
-    send_answer_module.get_secret_string = original_get_secret
+    send_answer_module.get_parameter = original_get_parameter
 
     # Assert
     assert result["sent"] is True
     assert result["reason"] == "SENT_SUCCESSFULLY"
     assert result["error"] is None
     assert len(mock_client.calls) == 1
-    assert mock_client.calls[0]["auth_token"] == "test_auth_token_from_secrets"
+    assert mock_client.calls[0]["auth_token"] == "test_auth_token_from_ssm"
     assert mock_client.calls[0]["user_id"] == "user123"
 
 
@@ -371,3 +369,95 @@ async def test_error_when_circuit_breaker_open() -> None:
     assert result["reason"] == "CIRCUIT_BREAKER_OPEN"
     assert result["error"] is not None
     assert result["error"]["error_code"] == "E006"
+
+
+@pytest.mark.asyncio
+async def test_error_when_missing_auth_parameter_name() -> None:
+    """Test error when talktalk_auth_parameter_name is missing."""
+    # Arrange
+    channel_config = {
+        "channel_id": "wc123456",
+        "channel_mode": "PROD",
+        "confidence_threshold": 0.80,
+    }
+    llm_response = {
+        "send_to_user": True,
+        "needs_operator": False,
+        "policy_flags": [],
+        "risk_level": "LOW",
+        "confidence": 0.90,
+    }
+
+    mock_repo = MockChannelConfigRepo(config=channel_config)
+    mock_client = MockTalkTalkClient(should_succeed=True)
+
+    # Act
+    result = await send_answer_if_allowed(
+        channel_id="wc123456",
+        user_id="user123",
+        answer_text="Your answer here",
+        global_mode="PROD",
+        llm_response=llm_response,
+        channel_config_repo=mock_repo,
+        talktalk_client=mock_client,
+    )
+
+    # Assert
+    assert result["sent"] is False
+    assert result["reason"] == "MISSING_AUTH_PARAMETER_NAME"
+    assert result["error"] is not None
+    assert result["error"]["error_code"] == "E006"
+    assert result["error"]["should_alert"] is True
+    assert len(mock_client.calls) == 0
+
+
+@pytest.mark.asyncio
+async def test_error_when_auth_token_retrieval_fails() -> None:
+    """Test error when SSM auth token retrieval fails."""
+    # Arrange
+    channel_config = {
+        "channel_id": "wc123456",
+        "channel_mode": "PROD",
+        "confidence_threshold": 0.80,
+        "talktalk_auth_parameter_name": TEST_TALKTALK_AUTH_PARAMETER_NAME,
+    }
+    llm_response = {
+        "send_to_user": True,
+        "needs_operator": False,
+        "policy_flags": [],
+        "risk_level": "LOW",
+        "confidence": 0.90,
+    }
+
+    mock_repo = MockChannelConfigRepo(config=channel_config)
+    mock_client = MockTalkTalkClient(should_succeed=True)
+
+    def mock_get_parameter_fail(parameter_name: str, **kwargs) -> str:
+        raise ParameterStoreError("SSM error")
+
+    import src.functions.worker.send_answer as send_answer_module
+
+    original_get_parameter = send_answer_module.get_parameter
+    send_answer_module.get_parameter = mock_get_parameter_fail
+
+    # Act
+    result = await send_answer_if_allowed(
+        channel_id="wc123456",
+        user_id="user123",
+        answer_text="Your answer here",
+        global_mode="PROD",
+        llm_response=llm_response,
+        channel_config_repo=mock_repo,
+        talktalk_client=mock_client,
+    )
+
+    # Restore
+    send_answer_module.get_parameter = original_get_parameter
+
+    # Assert
+    assert result["sent"] is False
+    assert result["reason"] == "AUTH_TOKEN_RETRIEVAL_FAILED"
+    assert result["error"] is not None
+    assert result["error"]["error_code"] == "E006"
+    assert result["error"]["should_alert"] is True
+    assert len(mock_client.calls) == 0

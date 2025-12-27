@@ -59,9 +59,21 @@ def mask_question(question: str) -> str:
         masked
     )
 
-    # Mask credit card numbers (13-16 continuous digits)
+    # Mask credit card numbers (13-16 digits, with or without hyphens/spaces)
+    # Matches patterns like:
+    # - 1234567890123456 (continuous)
+    # - 1234-5678-9012-3456 (hyphens)
+    # - 1234 5678 9012 3456 (spaces)
+    # - 1234-5678 9012-3456 (mixed)
+    # Using lookahead/lookbehind to handle non-ASCII boundaries
     masked = re.sub(
-        r"\b\d{13,16}\b",
+        r"(?<!\d)\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{3,4}(?!\d)",
+        "[CARD]",
+        masked
+    )
+    # Also catch continuous 13-16 digit numbers not in 4-digit groups
+    masked = re.sub(
+        r"(?<!\d)\d{13,16}(?!\d)",
         "[CARD]",
         masked
     )

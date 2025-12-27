@@ -5,7 +5,7 @@
 ## 클라우드 인프라
 
 - **Provider:** AWS
-- **핵심 서비스:** Lambda, API Gateway, SQS, DynamoDB, S3, EventBridge, Secrets Manager
+- **핵심 서비스:** Lambda, API Gateway, SQS, DynamoDB, S3, EventBridge, SSM Parameter Store
 - **배포 리전:** ap-northeast-2 (서울)
 
 ## 기술 스택 테이블
@@ -23,7 +23,7 @@
 | **메시지 큐** | SQS Standard | - | 이벤트 버퍼링 | 저비용 (100만건/월 무료), 높은 처리량, Lambda 네이티브 통합 |
 | **스토리지** | S3 Standard | - | 벡터 인덱스 저장 | 극소량 데이터 (<5MB) 저장 비용 무시 가능, 내구성 99.999999999% |
 | **스케줄러** | EventBridge Scheduler | - | 주간 문서 동기화 | 완전 관리형, 크론 표현식 지원, Lambda 트리거 |
-| **비밀 관리** | AWS Secrets Manager | - | API 키 저장 | 자동 로테이션, Lambda IAM 통합, 암호화 |
+| **비밀 관리** | AWS SSM Parameter Store (SecureString) | - | API 키/토큰 저장 | 비용 절감, Lambda IAM 통합, 암호화 |
 | **API 클라이언트 (OpenAI)** | openai | 1.10.0+ | OpenAI API 호출 | 공식 SDK, async 지원, 타입 힌트 |
 | **API 클라이언트 (Google)** | google-api-python-client | 2.111.0+ | Google Docs/Sheets API | 공식 SDK, OAuth2 지원 |
 | **HTTP 클라이언트** | httpx | 0.26.0+ | Naver TalkTalk API | async 지원, requests 대비 빠름, 타임아웃 제어 우수 |
@@ -189,6 +189,6 @@ MAX_MESSAGES_PER_AGGREGATION=10   # 최대 메시지 수
 - DynamoDB: <$1 (온디맨드, 극소량 읽기/쓰기)
 - SQS: 프리티어 (100만건/월 무료)
 - S3: <$0.10 (5MB 미만 저장)
-- Secrets Manager: $0.40 (시크릿 1개당)
+- SSM Parameter Store: Standard는 대부분 무료, Advanced는 비용이 생길 수 있음 (예: Google SA JSON)
 - OpenAI API: $1-2 (gpt-4o-mini + embeddings)
 - **총 예상 비용: $2-4/월**

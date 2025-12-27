@@ -2,9 +2,9 @@ schema: 1
 story: "6.1"
 story_title: "공통 원칙 (Telegram 알림)"
 gate: "PASS"
-status_reason: "Telegram 알림 메시지에 공통 필드가 항상 들어가고(채널/사용자/질문/초안/사유/집계), PII 마스킹이 테스트로 확인됩니다. 조합 메시지에서도 aggregation_id/message_count가 파이프라인을 통해 전달되게 보완했고 pytest(322) 통과했습니다."
+status_reason: "Telegram 알림 메시지에 공통 필드가 항상 들어가고(채널/사용자/질문/초안/사유/집계), PII 마스킹이 테스트로 확인됩니다. pytest/ruff/mypy(src) 재검증도 통과했습니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-25T08:36:40Z"
+updated: "2025-12-27T17:50:19Z"
 
 waiver: { active: false }
 
@@ -24,10 +24,10 @@ risk_summary:
       - "조합 메시지에서 aggregation_id/message_count가 실제로 찍히는지 운영에서 1회 확인"
 
 quality_score: 100
-expires: "2026-01-08T08:36:40Z"
+expires: "2026-01-10T17:50:19Z"
 
 evidence:
-  tests_reviewed: 322
+  tests_reviewed: 390
   risks_identified: 2
   trace:
     ac_covered: [1, 2, 3]

@@ -2,9 +2,9 @@ schema: 1
 story: "4.2"
 story_title: "Developer Prompt (정책/스키마 강제)"
 gate: "PASS"
-status_reason: "Developer Prompt 상수/헬퍼가 PRD 7.2 텍스트와 정확히 같고, 전체 pytest(229)에서 관련 유닛 테스트가 통과합니다."
+status_reason: "Developer Prompt 상수/헬퍼가 PRD 7.2 텍스트와 정확히 같고, 전체 pytest(390)에서 관련 유닛 테스트가 통과합니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-25T02:19:56Z"
+updated: "2025-12-27T17:21:57Z"
 
 waiver: { active: false }
 
@@ -24,10 +24,10 @@ risk_summary:
       - "PRD/epic 문서의 프롬프트 원문 표기를 하나로 통일"
 
 quality_score: 100
-expires: "2026-01-08T02:19:56Z"
+expires: "2026-01-10T17:21:57Z"
 
 evidence:
-  tests_reviewed: 229
+  tests_reviewed: 390
   risks_identified: 2
   trace:
     ac_covered: [1, 2, 3]

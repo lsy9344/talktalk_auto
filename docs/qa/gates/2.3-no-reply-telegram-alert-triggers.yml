@@ -2,9 +2,9 @@ schema: 1
 story: "2.3"
 story_title: "무응답 + Telegram 알림 트리거 (No-Reply + Telegram Alert Triggers)"
 gate: "PASS"
-status_reason: "알림 트리거 규칙/마스킹/Telegram 전송이 요구사항대로 구현되어 있고, 유닛 테스트로 검증됩니다. pytest/ruff/mypy(src)도 통과합니다."
+status_reason: "Telegram/OpenAI/Google/TalkTalk 토큰을 SSM Parameter Store(SecureString)에서 읽도록 코드/인프라/테스트가 같은 기준으로 맞춰졌습니다. pytest/ruff/mypy도 통과했습니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-23T08:55:25Z"
+updated: "2025-12-27T09:50:13Z"
 
 waiver: { active: false }
 
@@ -22,10 +22,10 @@ risk_summary:
       - "카드번호 마스킹 범위 결정(선택)"
 
 quality_score: 100
-expires: "2026-01-06T08:55:25Z"
+expires: "2026-01-10T09:50:13Z"
 
 evidence:
-  tests_reviewed: 95
+  tests_reviewed: 393
   risks_identified: 1
   trace:
     ac_covered: [1, 2, 3, 4, 5, 6]
@@ -34,16 +34,16 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "Telegram 메시지에서 user_id/질문 원문이 마스킹되고, 전송 실패도 시스템을 멈추지 않습니다."
+    notes: "Telegram Bot Token을 환경 변수에 직접 넣지 않고, SSM SecureString에서 읽도록 되어 있습니다. (파라미터 이름은 로그에 마스킹)"
   performance:
     status: PASS
-    notes: "트리거 판별은 단순 분기라서 성능 부담이 거의 없습니다."
+    notes: "트리거 판별은 단순 분기이고, SSM 조회는 캐시로 반복 호출을 줄입니다."
   reliability:
     status: PASS
-    notes: "TEST 모드 항상 알림 + PROD에서 조건 만족 시 알림으로 일관되게 동작합니다."
+    notes: "SSM 파라미터 이름/권한/코드가 같은 기준(/talktalk-auto/...)으로 맞춰져 런타임 설정 불일치 리스크가 줄었습니다."
   maintainability:
     status: PASS
-    notes: "순수 함수 분리 + 테스트(34개)로 회귀를 막습니다."
+    notes: "config.py(환경 변수) + secrets.py(SSM 조회)로 책임이 분리되어 있고, 테스트로 고정되어 있습니다."
 
 recommendations:
   immediate: []

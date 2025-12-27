@@ -17,10 +17,10 @@ def mock_openai():
 
 @pytest.fixture
 def mock_secrets():
-    """Mock secrets manager"""
-    with patch("talktalk_shared.clients.openai_client.get_secret") as mock_get_secret:
-        mock_get_secret.return_value = "test_api_key"
-        yield mock_get_secret
+    """Mock config getter for OpenAI API key"""
+    with patch("talktalk_shared.clients.openai_client.get_openai_api_key") as mock_get_key:
+        mock_get_key.return_value = "test_api_key"
+        yield mock_get_key
 
 
 @pytest.fixture

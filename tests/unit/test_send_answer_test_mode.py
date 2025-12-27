@@ -30,7 +30,7 @@ class TestSendAnswerTestModeZeroSends:
             "channel_mode": "PROD",
             "enabled": True,
             "confidence_threshold": 0.80,
-            "talktalk_auth_secret_arn": "arn:aws:secretsmanager:region:account:secret:test",
+            "talktalk_auth_parameter_name": "/talktalk-auto/channels/wc123456/auth-token",
         }
 
     @pytest.fixture
@@ -41,7 +41,7 @@ class TestSendAnswerTestModeZeroSends:
             "channel_mode": "TEST",
             "enabled": True,
             "confidence_threshold": 0.80,
-            "talktalk_auth_secret_arn": "arn:aws:secretsmanager:region:account:secret:test",
+            "talktalk_auth_parameter_name": "/talktalk-auto/channels/wc123456/auth-token",
         }
 
     @pytest.fixture

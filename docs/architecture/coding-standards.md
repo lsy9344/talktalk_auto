@@ -33,9 +33,9 @@
 - **외부 API 호출:** 반드시 타임아웃 + 재시도 + Circuit Breaker 적용
   - 모든 API 클라이언트는 `clients/` 모듈 사용
 - **환경 변수:** `config.py`를 통해서만 접근, 직접 os.getenv() 금지
-  - 나쁜 예: `os.getenv("OPENAI_API_KEY")`
+  - 나쁜 예: `os.getenv("OPENAI_API_KEY_PARAM_NAME")`
   - 좋은 예: `config.get_openai_api_key()`
-- **secrets:** 하드코딩 절대 금지, Secrets Manager 사용 필수
+- **secrets:** 하드코딩 절대 금지, SSM Parameter Store(SecureString) 사용
 - **PRD 프롬프트 준수:** LLM 호출 시 PRD Section 7의 프롬프트 그대로 사용
   - 프롬프트 수정 시 아키텍트와 협의 필요
 

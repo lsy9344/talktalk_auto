@@ -52,12 +52,31 @@ def get_service_name() -> str:
     return os.getenv("SERVICE_NAME", "talktalk-auto")
 
 
+def get_telegram_bot_token_param_name() -> str:
+    """Get Telegram bot token parameter name from environment.
+
+    The parameter name points to the SSM Parameter Store parameter that contains the actual token.
+
+    Reference: docs/stories/2.3.story.md AC 5
+    """
+    param_name = os.getenv("TELEGRAM_BOT_TOKEN_PARAM_NAME")
+    if not param_name:
+        raise ValueError("TELEGRAM_BOT_TOKEN_PARAM_NAME environment variable is required")
+    return param_name
+
+
 def get_telegram_bot_token() -> str:
-    """Get Telegram bot token from environment"""
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token:
-        raise ValueError("TELEGRAM_BOT_TOKEN environment variable is required")
-    return token
+    """Get Telegram bot token from SSM Parameter Store.
+
+    Reads the parameter name from environment variable, then retrieves the actual token
+    from SSM Parameter Store (SecureString).
+
+    Reference: docs/stories/2.3.story.md AC 5
+    """
+    from talktalk_shared.utils.secrets import get_parameter
+
+    param_name = get_telegram_bot_token_param_name()
+    return get_parameter(param_name)
 
 
 def get_telegram_chat_id() -> str:
@@ -121,3 +140,57 @@ def get_google_sheets_spreadsheet_id() -> str:
     if not spreadsheet_id:
         raise ValueError("GOOGLE_SHEETS_SPREADSHEET_ID environment variable is required")
     return spreadsheet_id
+
+
+def get_openai_api_key_param_name() -> str:
+    """Get OpenAI API key parameter name from environment.
+
+    The parameter name points to the SSM Parameter Store parameter that contains the actual API key.
+
+    Reference: docs/architecture.md#aws-components-summary
+    """
+    param_name = os.getenv("OPENAI_API_KEY_PARAM_NAME")
+    if not param_name:
+        raise ValueError("OPENAI_API_KEY_PARAM_NAME environment variable is required")
+    return param_name
+
+
+def get_openai_api_key() -> str:
+    """Get OpenAI API key from SSM Parameter Store.
+
+    Reads the parameter name from environment variable, then retrieves the actual key
+    from SSM Parameter Store (SecureString).
+
+    Reference: docs/architecture.md#aws-components-summary
+    """
+    from talktalk_shared.utils.secrets import get_parameter
+
+    param_name = get_openai_api_key_param_name()
+    return get_parameter(param_name)
+
+
+def get_google_sa_json_param_name() -> str:
+    """Get Google Service Account JSON parameter name from environment.
+
+    The parameter name points to the SSM Parameter Store parameter that contains the SA JSON.
+
+    Reference: docs/architecture.md#aws-components-summary
+    """
+    param_name = os.getenv("GOOGLE_SA_JSON_PARAM_NAME")
+    if not param_name:
+        raise ValueError("GOOGLE_SA_JSON_PARAM_NAME environment variable is required")
+    return param_name
+
+
+def get_google_sa_json() -> str:
+    """Get Google Service Account JSON from SSM Parameter Store.
+
+    Reads the parameter name from environment variable, then retrieves the actual SA JSON
+    from SSM Parameter Store (SecureString).
+
+    Reference: docs/architecture.md#aws-components-summary
+    """
+    from talktalk_shared.utils.secrets import get_parameter
+
+    param_name = get_google_sa_json_param_name()
+    return get_parameter(param_name)

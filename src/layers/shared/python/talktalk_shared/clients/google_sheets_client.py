@@ -12,6 +12,7 @@ from googleapiclient.errors import HttpError  # type: ignore[import-untyped]
 
 from talktalk_shared.config import (
     GOOGLE_SHEETS_INBOX_LOG_TAB,
+    get_google_sa_json,
     get_google_sheets_spreadsheet_id,
 )
 from talktalk_shared.utils.circuit_breaker import (
@@ -20,7 +21,6 @@ from talktalk_shared.utils.circuit_breaker import (
     CircuitBreakerOpenError,
 )
 from talktalk_shared.utils.logger import get_logger
-from talktalk_shared.utils.secrets import get_secret
 
 logger = get_logger(__name__)
 
@@ -65,8 +65,8 @@ class GoogleSheetsClient:
         """
         if self._service is None:
             try:
-                # Get service account credentials from Secrets Manager
-                sa_json_str = get_secret("GOOGLE_SA_JSON")
+                # Get service account credentials from SSM Parameter Store
+                sa_json_str = get_google_sa_json()
                 sa_dict = json.loads(sa_json_str)
 
                 credentials = service_account.Credentials.from_service_account_info(

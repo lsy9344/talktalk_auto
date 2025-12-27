@@ -2,9 +2,9 @@ schema: 1
 story: "3.4"
 story_title: "Retrieval 전략 (저비용/충분성)"
 gate: "PASS"
-status_reason: "채널 KB → 공통 KB 2단계 검색(topK 6/4) + 최대 10개 제한 + 중복 제거 + 부분 실패 skip이 구현되어 있고, pytest/ruff/mypy(src) 검증이 통과합니다."
+status_reason: "2단계 검색(topK 6/4) + 최대 10개 제한이 구현되어 있고, 청크 JSON 형식 불일치(메타데이터 누락) 위험을 보강했으며 pytest/ruff/mypy(src) 재검증이 통과합니다."
 reviewer: "Quinn (Test Architect)"
-updated: "2025-12-25T00:35:41Z"
+updated: "2025-12-27T17:07:11Z"
 
 waiver: { active: false }
 
@@ -29,10 +29,10 @@ risk_summary:
       - "VectorIndexMetadata를 통한 index key 조회 필요성 재검토"
 
 quality_score: 100
-expires: "2026-01-08T00:35:41Z"
+expires: "2026-01-10T17:07:11Z"
 
 evidence:
-  tests_reviewed: 211
+  tests_reviewed: 390
   risks_identified: 2
   trace:
     ac_covered: [1, 2, 3, 4, 5, 6]
@@ -41,7 +41,7 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "질문/청크 본문을 로그에 남기지 않고(PII 마스킹), Secrets Manager로 API key를 처리합니다."
+    notes: "질문/청크 본문을 로그에 남기지 않고(PII 마스킹), SSM Parameter Store(SecureString)로 API key를 처리합니다."
   performance:
     status: PASS
     notes: "topK(6/4) + max 10 제한으로 LLM 입력 토큰/비용을 줄입니다(캐시는 추후 개선 포인트)."

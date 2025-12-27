@@ -1,4 +1,4 @@
-"""AWS Secrets Manager utility for retrieving secrets.
+"""AWS SSM Parameter Store utility for retrieving parameters.
 
 Reference: docs/architecture.md#aws-components-summary
 Reference: docs/stories/2.4.story.md AC 4, 6
@@ -12,150 +12,134 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 logger = logging.getLogger(__name__)
 
-# Simple in-memory cache to avoid repeated Secrets Manager calls
-_secrets_cache: Dict[str, str] = {}
+# Simple in-memory cache to avoid repeated SSM calls
+_parameter_cache: Dict[str, str] = {}
 
 
-class SecretsManagerError(Exception):
-    """Secrets Manager 조회 실패 시 발생하는 예외."""
+class ParameterStoreError(Exception):
+    """Parameter Store 조회 실패 시 발생하는 예외."""
 
     pass
 
 
-def get_secret_string(
-    secret_arn: str, use_cache: bool = True, client: Optional[boto3.client] = None
+def get_parameter(
+    parameter_name: str, use_cache: bool = True, client: Optional[boto3.client] = None
 ) -> str:
-    """Retrieve secret string from AWS Secrets Manager.
+    """Retrieve parameter from AWS SSM Parameter Store.
 
     Args:
-        secret_arn: ARN of the secret to retrieve
+        parameter_name: Name or path of the parameter to retrieve
+            (e.g., "/talktalk-auto/secrets/telegram-bot-token")
         use_cache: Whether to use in-memory cache (default: True)
-        client: boto3 Secrets Manager client (creates default if None)
+        client: boto3 SSM client (creates default if None)
 
     Returns:
-        Secret string value
+        Parameter value (decrypted if SecureString)
 
     Raises:
-        SecretsManagerError: If secret retrieval fails
+        ParameterStoreError: If parameter retrieval fails
 
     Reference: docs/architecture.md#aws-components-summary
+    Reference: docs/stories/2.3.story.md AC 5
     """
     # Check cache first
-    if use_cache and secret_arn in _secrets_cache:
+    if use_cache and parameter_name in _parameter_cache:
         logger.debug(
-            "Secret retrieved from cache",
-            extra={"secret_arn": _mask_arn(secret_arn)},
+            "Parameter retrieved from cache",
+            extra={"parameter_name": _mask_parameter_name(parameter_name)},
         )
-        return _secrets_cache[secret_arn]
+        return _parameter_cache[parameter_name]
 
     # Create client if not provided
     if client is None:
-        client = boto3.client("secretsmanager")
+        client = boto3.client("ssm")
 
     try:
-        response = client.get_secret_value(SecretId=secret_arn)
+        response = client.get_parameter(Name=parameter_name, WithDecryption=True)
 
-        # Extract secret string
-        secret_value = response.get("SecretString")
-        if secret_value is None:
-            # Binary secrets not supported (or missing SecretString)
-            raise SecretsManagerError(
-                f"Binary secret not supported: {_mask_arn(secret_arn)}"
+        # Extract parameter value
+        parameter_value = response.get("Parameter", {}).get("Value")
+        if parameter_value is None:
+            raise ParameterStoreError(
+                f"Parameter value is None: {_mask_parameter_name(parameter_name)}"
             )
-        if not isinstance(secret_value, str):
-            raise SecretsManagerError(
-                f"SecretString is not a string: {_mask_arn(secret_arn)}"
+        if not isinstance(parameter_value, str):
+            raise ParameterStoreError(
+                f"Parameter value is not a string: {_mask_parameter_name(parameter_name)}"
             )
 
-        # Cache the secret
+        # Cache the parameter
         if use_cache:
-            _secrets_cache[secret_arn] = secret_value
+            _parameter_cache[parameter_name] = parameter_value
 
         logger.info(
-            "Secret retrieved successfully from Secrets Manager",
-            extra={"secret_arn": _mask_arn(secret_arn)},
+            "Parameter retrieved successfully from SSM Parameter Store",
+            extra={"parameter_name": _mask_parameter_name(parameter_name)},
         )
-        return secret_value
+        return parameter_value
 
     except ClientError as e:
         error_code = e.response.get("Error", {}).get("Code", "Unknown")
         logger.error(
-            "Failed to retrieve secret from Secrets Manager",
+            "Failed to retrieve parameter from SSM Parameter Store",
             extra={
-                "secret_arn": _mask_arn(secret_arn),
+                "parameter_name": _mask_parameter_name(parameter_name),
                 "error_code": error_code,
                 "error_message": str(e),
             },
         )
-        raise SecretsManagerError(
-            f"Failed to retrieve secret: {error_code}"
+        raise ParameterStoreError(
+            f"Failed to retrieve parameter: {error_code}"
         ) from e
+
+    except ParameterStoreError:
+        # Re-raise ParameterStoreError as-is (already logged above)
+        raise
 
     except BotoCoreError as e:
         logger.error(
-            "BotoCore error retrieving secret",
+            "BotoCore error retrieving parameter",
             extra={
-                "secret_arn": _mask_arn(secret_arn),
+                "parameter_name": _mask_parameter_name(parameter_name),
                 "error": str(e),
             },
         )
-        raise SecretsManagerError(f"BotoCore error: {str(e)}") from e
+        raise ParameterStoreError(f"BotoCore error: {str(e)}") from e
 
     except Exception as e:
         logger.error(
-            "Unexpected error retrieving secret",
+            "Unexpected error retrieving parameter",
             extra={
-                "secret_arn": _mask_arn(secret_arn),
+                "parameter_name": _mask_parameter_name(parameter_name),
                 "error": str(e),
                 "error_type": type(e).__name__,
             },
         )
-        raise SecretsManagerError(f"Unexpected error: {str(e)}") from e
+        raise ParameterStoreError(f"Unexpected error: {str(e)}") from e
 
 
-def get_secret(secret_name: str, use_cache: bool = True) -> str:
-    """Retrieve secret by name from AWS Secrets Manager.
+def clear_parameter_cache() -> None:
+    """Clear the in-memory parameter cache.
 
-    Convenience wrapper for get_secret_string that accepts secret name instead of ARN.
+    Useful for testing or when parameters are rotated.
+    """
+    global _parameter_cache
+    _parameter_cache = {}
+    logger.info("Parameter cache cleared")
+
+
+def _mask_parameter_name(name: str) -> str:
+    """Mask parameter name for logging (keep only last 8 characters).
 
     Args:
-        secret_name: Name of the secret to retrieve (e.g., "OPENAI_API_KEY")
-        use_cache: Whether to use in-memory cache (default: True)
+        name: Parameter name to mask
 
     Returns:
-        Secret string value
-
-    Raises:
-        SecretsManagerError: If secret retrieval fails
-
-    Reference: Story 3.2 - Simplified secret retrieval for Google/OpenAI clients
-    """
-    return get_secret_string(secret_name, use_cache=use_cache)
-
-
-def clear_secrets_cache() -> None:
-    """Clear the in-memory secrets cache.
-
-    Useful for testing or when secrets are rotated.
-    """
-    global _secrets_cache
-    _secrets_cache = {}
-    logger.info("Secrets cache cleared")
-
-
-def _mask_arn(arn: str) -> str:
-    """Mask ARN for logging (keep only last 8 characters).
-
-    Args:
-        arn: ARN string to mask
-
-    Returns:
-        Masked ARN string
+        Masked parameter name
 
     Example:
-        arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:my-secret-AbCdEf
-        -> ***AbCdEf
+        /talktalk-auto/secrets/telegram-bot-token -> ***ot-token
     """
-    if len(arn) <= 8:
+    if len(name) <= 8:
         return "***"
-    return f"***{arn[-8:]}"
+    return f"***{name[-8:]}"

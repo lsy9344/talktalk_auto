@@ -34,8 +34,8 @@ def mock_service() -> MagicMock:
 
 
 @pytest.fixture
-def mock_get_secret() -> Mock:
-    """Mock get_secret function"""
+def mock_get_google_sa_json() -> Mock:
+    """Mock get_google_sa_json function"""
     sa_json = {
         "type": "service_account",
         "project_id": "test-project",
@@ -60,7 +60,7 @@ def test_google_sheets_client_initialization() -> None:
 
 @patch("talktalk_shared.clients.google_sheets_client.service_account")
 @patch("talktalk_shared.clients.google_sheets_client.get_google_sheets_spreadsheet_id")
-@patch("talktalk_shared.clients.google_sheets_client.get_secret")
+@patch("talktalk_shared.clients.google_sheets_client.get_google_sa_json")
 @patch("talktalk_shared.clients.google_sheets_client.build")
 def test_append_row_success(
     mock_build: Mock,
@@ -101,7 +101,7 @@ def test_append_row_success(
 
 @patch("talktalk_shared.clients.google_sheets_client.service_account")
 @patch("talktalk_shared.clients.google_sheets_client.get_google_sheets_spreadsheet_id")
-@patch("talktalk_shared.clients.google_sheets_client.get_secret")
+@patch("talktalk_shared.clients.google_sheets_client.get_google_sa_json")
 @patch("talktalk_shared.clients.google_sheets_client.build")
 def test_append_row_with_custom_sheet_name(
     mock_build: Mock,
@@ -144,7 +144,7 @@ def test_append_row_with_custom_sheet_name(
 
 @patch("talktalk_shared.clients.google_sheets_client.service_account")
 @patch("talktalk_shared.clients.google_sheets_client.get_google_sheets_spreadsheet_id")
-@patch("talktalk_shared.clients.google_sheets_client.get_secret")
+@patch("talktalk_shared.clients.google_sheets_client.get_google_sa_json")
 @patch("talktalk_shared.clients.google_sheets_client.build")
 def test_append_row_retries_on_http_error(
     mock_build: Mock,
@@ -196,7 +196,7 @@ def test_append_row_retries_on_http_error(
 
 @patch("talktalk_shared.clients.google_sheets_client.service_account")
 @patch("talktalk_shared.clients.google_sheets_client.get_google_sheets_spreadsheet_id")
-@patch("talktalk_shared.clients.google_sheets_client.get_secret")
+@patch("talktalk_shared.clients.google_sheets_client.get_google_sa_json")
 @patch("talktalk_shared.clients.google_sheets_client.build")
 def test_append_row_succeeds_on_second_attempt(
     mock_build: Mock,

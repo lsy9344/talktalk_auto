@@ -29,7 +29,7 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "Secrets Manager 항목이 '키 이름' 수준으로만 문서화되어 있고, 실제 비밀값 노출은 없습니다."
+    notes: "SSM Parameter Store 항목이 '파라미터 이름' 수준으로만 문서화되어 있고, 실제 비밀값 노출은 없습니다."
   performance:
     status: PASS
     notes: "문서 스토리라 직접 성능 변경은 없습니다."
@@ -43,5 +43,5 @@ nfr_validation:
 recommendations:
   immediate: []
   future:
-    - action: "docs/architecture/index.md에 AWS Components Summary / Secrets Manager Contents로 바로 가는 링크 추가(선택)"
+    - action: "docs/architecture/index.md에 AWS Components Summary / SSM Parameter Store Parameters로 바로 가는 링크 추가(선택)"
       refs: ["docs/architecture/index.md"]
